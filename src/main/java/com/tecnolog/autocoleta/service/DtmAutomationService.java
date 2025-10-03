@@ -8,8 +8,8 @@ import com.tecnolog.autocoleta.pedidos.PedidosApiClient;
 import com.tecnolog.autocoleta.pedidos.payload.DtmJson;
 
 import feign.FeignException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class DtmAutomationService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DtmAutomationService.class);
 
     // ===== DEPENDÊNCIAS INJETADAS =====
     private final DtmRepository dtmRepository;
@@ -28,11 +28,24 @@ public class DtmAutomationService {
     private final DtmMapper mapper;
     private final PedidosApiClient pedidosApi;
 
+    // Construtor explícito (injeção por construtor, sem Lombok)
+    public DtmAutomationService(
+            DtmRepository dtmRepository,
+            DtmLockRepository lockRepository,
+            DtmMapper mapper,
+            PedidosApiClient pedidosApi
+    ) {
+        this.dtmRepository = dtmRepository;
+        this.lockRepository = lockRepository;
+        this.mapper = mapper;
+        this.pedidosApi = pedidosApi;
+    }
+
     @Transactional
     public Optional<Long> processOne() {
         Optional<DtmPendingRow> opt = dtmRepository.fetchNextPending();
         if (opt.isEmpty()) {
-            log.info("Nenhuma DTM pendente encontrada.");
+            LOG.info("Nenhuma DTM pendente encontrada.");
             return Optional.empty();
         }
 
@@ -41,7 +54,7 @@ public class DtmAutomationService {
 
         try {
             if (!lockRepository.tryLock(id)) {
-                log.info("DTM {} já está em processamento por outro worker.", id);
+                LOG.info("DTM {} já está em processamento por outro worker.", id);
                 return Optional.empty();
             }
 
@@ -69,16 +82,16 @@ public class DtmAutomationService {
             }
 
             lockRepository.markProcessed(id);
-            log.info("Pedido criado com sucesso para DTM {}. Response: {}", id, resp);
+            LOG.info("Pedido criado com sucesso para DTM {}. Response: {}", id, resp);
             return Optional.of(id);
 
         } catch (Exception e) {
             try {
                 lockRepository.markError(id, e.getMessage());
             } catch (Exception ignored) {
-                log.debug("Falha ao marcar erro no lock {}", id, ignored);
+                LOG.debug("Falha ao marcar erro no lock {}", id, ignored);
             }
-            log.error("Erro ao processar DTM {}: {}", id, e.getMessage(), e);
+            LOG.error("Erro ao processar DTM {}: {}", id, e.getMessage(), e);
             return Optional.empty();
         }
     }
@@ -98,18 +111,18 @@ public class DtmAutomationService {
                 Map<String, Object> resp = pedidosApi.inserir(payload);
                 if (resp == null) {
                     lockRepository.markError(id, "Resposta nula da API Pedidos");
-                    log.warn("DTM {} falhou: resposta nula", id);
+                    LOG.warn("DTM {} falhou: resposta nula", id);
                     continue;
                 }
                 if (parseErro(resp)) {
                     String msg = parseMensagem(resp);
                     lockRepository.markError(id, "API retornou erro: " + msg);
-                    log.warn("DTM {} falhou: {}", id, msg);
+                    LOG.warn("DTM {} falhou: {}", id, msg);
                     continue;
                 }
                 lockRepository.markProcessed(id);
                 ok++;
-                log.info("DTM {} inserida com sucesso: {}", id, parseMensagem(resp));
+                LOG.info("DTM {} inserida com sucesso: {}", id, parseMensagem(resp));
             } catch (FeignException e) {
                 String body;
                 try { body = e.contentUTF8(); } catch (Throwable t) { body = e.getMessage(); }

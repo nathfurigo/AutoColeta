@@ -46,7 +46,7 @@ public class DtmLockRepository {
 
         Boolean processed = jdbc.queryForObject(
             "SELECT processed FROM " + tbl + " WHERE id_dtm = ?",
-            new Object[]{idDtm},
+            new Object[]{idDtm}, // <-- O uso do array Object[] para argumentos é antigo.
             Boolean.class
         );
         return processed != null && !processed;

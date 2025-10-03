@@ -1,24 +1,19 @@
 {
-  // define o runtime padrão como Java 21
   "java.configuration.runtimes": [
     {
       "name": "JavaSE-21",
-      "path": "C:\\Program Files\\Java\\jdk-21", // ajuste para o diretório do seu JDK
+      "path": "C:\\Program Files\\Java\\jdk-21",
       "default": true
     }
   ],
 
-  // garante que o compilador use o Java 21
   "java.configuration.languageLevel": "21",
   "java.configuration.defaultRuntime": "JavaSE-21",
 
-  // se estiver usando Maven, integra com a versão do JDK
   "java.import.maven.enabled": true,
 
-  // habilita preview features (se quiser usar type patterns, record patterns, etc.)
   "java.compile.nullAnalysis.mode": "automatic",
   "java.compile.previewFeatures": true,
 
-  // bytecode alvo (garante compatibilidade ao rodar)
   "java.settings.compilerArgs": ["--release", "21"]
 }

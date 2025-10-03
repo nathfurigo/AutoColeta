@@ -1,13 +1,9 @@
 package com.tecnolog.autocoleta.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
 import com.tecnolog.autocoleta.domain.Modal;
 
-@Configuration
-@EnableConfigurationProperties(AppProperties.class)
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
 
@@ -92,4 +88,14 @@ public class AppProperties {
         public String getHrFim() { return hrFim; }
         public void setHrFim(String hrFim) { this.hrFim = hrFim; }
     }
+    private Pedidos pedidos = new Pedidos();
+    public Pedidos getPedidos(){ return pedidos; }
+    public void setPedidos(Pedidos p){ this.pedidos = p; }
+
+    public static class Pedidos {
+    private String baseUrl;
+    private Integer connectTimeoutMs = 5000;
+    private Integer readTimeoutMs = 30000;
+    }
+
 }

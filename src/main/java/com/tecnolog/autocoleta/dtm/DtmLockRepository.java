@@ -16,40 +16,55 @@ public class DtmLockRepository {
     }
 
     private void ensureTable() {
-        String tbl = props.getDtm().getLockTable();
+        String tbl = props.getDtm().getLockTable();         
+        String idx = ("idx_" + tbl).replaceAll("[^A-Za-z0-9_]", "_"); 
+
         String createSql =
             "CREATE TABLE IF NOT EXISTS " + tbl + " (" +
-            "id_dtm BIGINT PRIMARY KEY, " +
-            "processed BOOLEAN NOT NULL DEFAULT FALSE, " +
-            "processed_at TIMESTAMPTZ NULL, " +
-            "last_error TEXT NULL" +
+            "  id_dtm BIGINT PRIMARY KEY, " +
+            "  processed BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  processed_at TIMESTAMP WITH TIME ZONE NULL, " +
+            "  last_error TEXT NULL" +
             ")";
         jdbc.execute(createSql);
 
-        // índice auxiliar
-        String idxSql = "CREATE INDEX IF NOT EXISTS idx_" + tbl + "_processed ON " + tbl + " (processed)";
+        String idxSql =
+            "CREATE INDEX IF NOT EXISTS " + idx +
+            " ON " + tbl + " (processed)";
         jdbc.execute(idxSql);
     }
 
-    public void markProcessed(long idDtm) {
-        String sql = String.format(
-            "INSERT INTO %s (id_dtm, processed, processed_at, last_error) " +
-            "VALUES (?, TRUE, NOW(), NULL) " +
-            "ON CONFLICT (id_dtm) DO UPDATE " +
-            "SET processed = EXCLUDED.processed, processed_at = EXCLUDED.processed_at, last_error = NULL",
-            props.getDtm().getLockTable()
+    public boolean tryLock(long idDtm) {
+        String tbl = props.getDtm().getLockTable();
+        String insertIfNotExists =
+            "INSERT INTO " + tbl + " (id_dtm, processed) " +
+            "SELECT ?, FALSE " +
+            "WHERE NOT EXISTS (SELECT 1 FROM " + tbl + " WHERE id_dtm = ?)";
+        jdbc.update(insertIfNotExists, idDtm, idDtm);
+
+        Boolean processed = jdbc.queryForObject(
+            "SELECT processed FROM " + tbl + " WHERE id_dtm = ?",
+            Boolean.class, idDtm
         );
+        return processed != null && !processed;
+    }
+
+    public void markProcessed(long idDtm) {
+        String sql = "UPDATE " + props.getDtm().getLockTable() +
+                     " SET processed = TRUE, processed_at = CURRENT_TIMESTAMP, last_error = NULL " +
+                     "WHERE id_dtm = ?";
         jdbc.update(sql, idDtm);
     }
 
     public void markError(long idDtm, String msg) {
-        String sql = String.format(
-            "INSERT INTO %s (id_dtm, processed, processed_at, last_error) " +
-            "VALUES (?, FALSE, NULL, ?) " +
-            "ON CONFLICT (id_dtm) DO UPDATE " +
-            "SET processed = FALSE, last_error = EXCLUDED.last_error",
-            props.getDtm().getLockTable()
-        );
-        jdbc.update(sql, idDtm, msg);
+        String sql = "UPDATE " + props.getDtm().getLockTable() +
+                     " SET processed = FALSE, last_error = ? " +
+                     "WHERE id_dtm = ?";
+        int n = jdbc.update(sql, msg, idDtm);
+        if (n == 0) {
+            String ins = "INSERT INTO " + props.getDtm().getLockTable() +
+                         " (id_dtm, processed, processed_at, last_error) VALUES (?, FALSE, NULL, ?)";
+            jdbc.update(ins, idDtm, msg);
+        }
     }
 }

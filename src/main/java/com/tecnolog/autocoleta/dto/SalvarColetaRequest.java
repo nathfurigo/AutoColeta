@@ -49,6 +49,14 @@ public class SalvarColetaRequest {
 
     private String dsComentarios;
 
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
+    }
+
     @Data
     public class NotaFiscalDto {
         private Long id;

@@ -1,6 +1,6 @@
 spring:
   main:
-      allow-bean-definition-overriding: true
+    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg
     username: postgres
@@ -10,25 +10,34 @@ spring:
   jackson:
     time-zone: America/Sao_Paulo
     serialization:
-      WRITE_DATES_AS_TIMESTAMPS: false
+      write-dates-as-timestamps: false   # <- usar kebab-case
 
 app:
   dtm:
     view: vw_dtm_pedidocoleta_unica
     lockTable: dtm_automation_lock
+
   salvarColeta:
-    baseUrl: https://synclog.com.br/api/v1/PedidoColeta/SalvaColeta
+    # IMPORTANTE: base só com o host (o path vem no @PostMapping do Feign)
+    baseUrl: https://synclog.com.br
     tokenHash: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
     timeoutSeconds: 30
+
   pedidos:
-    base-url: https://synclog.com.br  
+    base-url: https://synclog.com.br
     connect-timeout-ms: 5000
     read-timeout-ms: 30000
+    security:
+      header: "Hash"
+      value: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
 
 logging:
   level:
     root: INFO
     com.tecnolog.autocoleta: DEBUG
+    feign: DEBUG
+    # se quiser ver o corpo completo dos requests/responses Feign:
+    com.tecnolog.autocoleta.salvarcoleta: DEBUG
 
 feign:
   client:
@@ -36,4 +45,8 @@ feign:
       salvarColeta:
         connectTimeout: 30000
         readTimeout: 30000
-
+        loggerLevel: FULL
+      pedidos:
+        connectTimeout: 5000
+        readTimeout: 30000
+        loggerLevel: FULL

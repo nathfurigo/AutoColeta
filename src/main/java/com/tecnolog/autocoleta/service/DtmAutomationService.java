@@ -5,7 +5,7 @@ import com.tecnolog.autocoleta.dtm.DtmMapper;
 import com.tecnolog.autocoleta.dtm.DtmPendingRow;
 import com.tecnolog.autocoleta.dtm.DtmRepository;
 import com.tecnolog.autocoleta.pedidos.PedidosApiClient;
-import com.tecnolog.autocoleta.pedidos.payload.DtmJson;
+import com.tecnolog.autocoleta.dtm.DtmJson;
 
 import feign.FeignException;
 import org.slf4j.Logger;
@@ -134,12 +134,15 @@ public class DtmAutomationService {
         return ok;
     }
 
-    // ===== Helpers API Pedidos =====
     private boolean parseErro(Map<String, Object> resp) {
         if (resp == null) return true;
         Object raw = resp.get("erro");
         if (raw == null) raw = resp.get("error");
         if (raw == null) return false;
+
+        if (raw instanceof Boolean b) return b;
+        if (raw instanceof Number n) return n.intValue() != 0;
+
         String s = String.valueOf(raw).trim();
         if (s.isEmpty()) return false;
         return "true".equalsIgnoreCase(s) || "1".equals(s);

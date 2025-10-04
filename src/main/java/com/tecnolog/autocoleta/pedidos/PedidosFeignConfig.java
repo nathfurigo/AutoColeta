@@ -1,9 +1,14 @@
 package com.tecnolog.autocoleta.pedidos;
 
+import feign.Logger;
 import feign.Request;
-import org.springframework.context.annotation.Bean;
+import feign.RequestInterceptor;
+import feign.codec.ErrorDecoder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 public class PedidosFeignConfig {
 
   @Bean
@@ -14,30 +19,25 @@ public class PedidosFeignConfig {
     return new Request.Options(connectTimeout, readTimeout);
   }
 
+  @Bean Logger.Level feignLoggerLevel() { return Logger.Level.FULL; }
+  @Bean ErrorDecoder pedidosErrorDecoder() { return new PedidosErrorDecoder(); }
+
   @Bean
-  feign.RequestInterceptor pedidosAuthInterceptor(
-        @org.springframework.beans.factory.annotation.Value("${app.pedidos.auth.header:}") String header,
-        @org.springframework.beans.factory.annotation.Value("${app.pedidos.auth.value:}")  String value) {
+  RequestInterceptor pedidosAuthInterceptor(
+      @Value("${app.pedidos.auth.header:}") String header,
+      @Value("${app.pedidos.auth.value:}")  String value) {
     return template -> {
-        if (!header.isBlank() && !value.isBlank()) {
-            // header original (mantém como está)
-            template.header(header, value); // ex.: Hash: 5de61e...
+      if (!header.isBlank() && !value.isBlank()) {
+        template.header(header, value);
+        template.header("Authorization", header + " " + value);
+      }
+      // evita gzip para o logger conseguir imprimir o HTML
+      template.header("Accept-Encoding", "identity");
 
-            // extra: Authorization com o mesmo esquema usado no header
-            // Se o header configurado for "Hash", ficaremos com "Authorization: Hash <valor>"
-            template.header("Authorization", header + " " + value);
-        }
-
-        // garantir JSON com charset (ok se já vier de outro lugar)
-        if (template.headers().getOrDefault("Content-Type", java.util.List.of()).stream()
-                .noneMatch(v -> v.toLowerCase().contains("charset"))) {
-            template.header("Content-Type", "application/json; charset=UTF-8");
-        }
-
-        // (opcional, ajuda em alguns gateways .NET)
-        template.header("Accept", "application/json, */*");
-        template.header("Accept-Language", "pt-BR");
-        template.header("User-Agent", "autocoleta/1.0");
+      template.header("Content-Type", "application/json; charset=UTF-8");
+      template.header("Accept", "application/json, */*");
+      template.header("Accept-Language", "pt-BR");
+      template.header("User-Agent", "autocoleta/1.0");
     };
   }
 }

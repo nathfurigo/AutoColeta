@@ -26,7 +26,7 @@ public class DtmAutomationService {
     private final DtmToSalvarColetaMapper mapper;
     private final SalvarColetaClient salvarColeta;
 
-    // <<< construtor explícito (sem @RequiredArgsConstructor) >>>
+    // Construtor explícito (sem Lombok)
     public DtmAutomationService(DtmRepository dtmRepository,
                                 DtmLockRepository lockRepository,
                                 DtmToSalvarColetaMapper mapper,
@@ -71,15 +71,25 @@ public class DtmAutomationService {
             return true;
 
         } catch (FeignException fe) {
-            // contentUTF8 nem sempre existe dependendo da versão do Feign
             String body;
-            try { body = fe.getMessage(); } catch (Throwable t) { body = "FeignException sem mensagem"; }
+            try {
+                body = fe.contentUTF8(); // disponível em versões +novas
+            } catch (Throwable ignore) {
+                try {
+                    body = fe.getMessage();
+                } catch (Throwable t) {
+                    body = "FeignException sem corpo/mensagem";
+                }
+            }
             String msg = "HTTP " + fe.status() + " ao chamar SalvarColeta: " + body;
             lockRepository.markError(id, msg);
             throw new RuntimeException(msg, fe);
 
         } catch (RuntimeException e) {
-            // já marcamos o erro acima quando aplicável
+            // se chegou aqui sem marcar erro, marque agora
+            try {
+                lockRepository.markError(id, "Falha inesperada: " + e.getMessage());
+            } catch (Throwable ignore) { /* evita esconder exceção original */ }
             throw e;
         }
     }
@@ -104,7 +114,7 @@ public class DtmAutomationService {
                     continue;
                 }
                 if (resp.isErro()) {
-                    lockRepository.markError(id, "API erro: " + resp.getResponse());
+                    lockRepository.markError(id, "API erro: " + String.valueOf(resp.getResponse()));
                     continue;
                 }
 
@@ -113,7 +123,11 @@ public class DtmAutomationService {
 
             } catch (FeignException fe) {
                 String body;
-                try { body = fe.getMessage(); } catch (Throwable t) { body = "FeignException sem mensagem"; }
+                try {
+                    body = fe.contentUTF8();
+                } catch (Throwable ignore) {
+                    try { body = fe.getMessage(); } catch (Throwable t) { body = "FeignException sem corpo/mensagem"; }
+                }
                 lockRepository.markError(id, "HTTP " + fe.status() + ": " + body);
 
             } catch (Throwable t) {

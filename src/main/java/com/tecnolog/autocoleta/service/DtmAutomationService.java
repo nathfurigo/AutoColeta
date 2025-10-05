@@ -5,16 +5,18 @@ import com.tecnolog.autocoleta.dtm.DtmPendingRow;
 import com.tecnolog.autocoleta.dtm.DtmRepository;
 import com.tecnolog.autocoleta.dtm.DtmToSalvarColetaMapper;
 import com.tecnolog.autocoleta.salvarcoleta.SalvarColetaClient;
-import com.tecnolog.autocoleta.salvarcoleta.payload.SalvaColetaModel;
 import com.tecnolog.autocoleta.dto.SalvarColetaResponse;
 
 import feign.FeignException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import com.tecnolog.autocoleta.dto.SalvarColetaRequest;
 
 @Service
 public class DtmAutomationService {
@@ -52,8 +54,9 @@ public class DtmAutomationService {
         }
 
         try {
-            SalvaColetaModel model = mapper.map(row);
-            SalvarColetaResponse resp = salvarColeta.salvar(model);
+            // mapper.map agora devolve SalvarColetaRequest
+            SalvarColetaRequest req = mapper.map(row);
+            SalvarColetaResponse resp = salvarColeta.salvar(req);
 
             if (resp == null) {
                 lockRepository.markError(id, "Resposta nula da API Pedidos");
@@ -71,25 +74,21 @@ public class DtmAutomationService {
             return true;
 
         } catch (FeignException fe) {
+            // contentUTF8 pode não existir em algumas versões; use fallback seguro
             String body;
             try {
-                body = fe.contentUTF8(); // disponível em versões +novas
-            } catch (Throwable ignore) {
-                try {
-                    body = fe.getMessage();
-                } catch (Throwable t) {
-                    body = "FeignException sem corpo/mensagem";
-                }
+                body = fe.getMessage();
+            } catch (Throwable t) {
+                body = "FeignException sem mensagem";
             }
             String msg = "HTTP " + fe.status() + " ao chamar SalvarColeta: " + body;
             lockRepository.markError(id, msg);
             throw new RuntimeException(msg, fe);
 
         } catch (RuntimeException e) {
-            // se chegou aqui sem marcar erro, marque agora
             try {
                 lockRepository.markError(id, "Falha inesperada: " + e.getMessage());
-            } catch (Throwable ignore) { /* evita esconder exceção original */ }
+            } catch (Throwable ignore) { }
             throw e;
         }
     }
@@ -106,8 +105,8 @@ public class DtmAutomationService {
             if (!lockRepository.tryLock(id)) continue;
 
             try {
-                SalvaColetaModel model = mapper.map(r);
-                SalvarColetaResponse resp = salvarColeta.salvar(model);
+                SalvarColetaRequest req = mapper.map(r);
+                SalvarColetaResponse resp = salvarColeta.salvar(req);
 
                 if (resp == null) {
                     lockRepository.markError(id, "Resposta nula da API Pedidos");
@@ -123,11 +122,7 @@ public class DtmAutomationService {
 
             } catch (FeignException fe) {
                 String body;
-                try {
-                    body = fe.contentUTF8();
-                } catch (Throwable ignore) {
-                    try { body = fe.getMessage(); } catch (Throwable t) { body = "FeignException sem corpo/mensagem"; }
-                }
+                try { body = fe.getMessage(); } catch (Throwable t) { body = "FeignException sem mensagem"; }
                 lockRepository.markError(id, "HTTP " + fe.status() + ": " + body);
 
             } catch (Throwable t) {

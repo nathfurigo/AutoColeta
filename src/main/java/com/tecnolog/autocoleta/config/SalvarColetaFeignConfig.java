@@ -1,4 +1,4 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.config;
 
 import feign.RequestInterceptor;
 import feign.codec.Decoder;

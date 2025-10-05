@@ -1,6 +1,6 @@
 package com.tecnolog.autocoleta.pedidos.payload;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -9,8 +9,8 @@ public class DtmJson {
     public Long Dtm;
     public Integer Versao;
 
-    public OffsetDateTime DtInicio;
-    public OffsetDateTime DtFim;
+    private LocalDateTime DtInicio;
+    private LocalDateTime DtFim;
 
     public String NivelServico;  
     public String TipoServico;     
@@ -79,16 +79,16 @@ public class DtmJson {
     public void setVersao(Integer versao) {
       Versao = versao;
     }
-    public OffsetDateTime getDtInicio() {
+    public LocalDateTime getDtInicio() {
       return DtInicio;
     }
-    public void setDtInicio(OffsetDateTime dtInicio) {
+    public void setDtInicio(LocalDateTime dtInicio) {
       DtInicio = dtInicio;
     }
-    public OffsetDateTime getDtFim() {
+    public LocalDateTime getDtFim() {
       return DtFim;
     }
-    public void setDtFim(OffsetDateTime dtFim) {
+    public void setDtFim(LocalDateTime dtFim) {
       DtFim = dtFim;
     }
     public String getNivelServico() {

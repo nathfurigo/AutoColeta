@@ -1,4 +1,7 @@
 spring:
+  jpa:
+    properties:
+      hibernate:
   main:
     allow-bean-definition-overriding: true
   datasource:

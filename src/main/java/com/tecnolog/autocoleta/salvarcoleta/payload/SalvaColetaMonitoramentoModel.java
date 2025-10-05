@@ -1,43 +1,23 @@
 package com.tecnolog.autocoleta.salvarcoleta.payload;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Data
 public class SalvaColetaMonitoramentoModel {
-    public int id;
-    public String nome;
-    public String telefone;
-    public String email;
 
-    public int getId() {
-        return id;
-    }
+    @JsonProperty("Id")       private Integer id;
+    @JsonProperty("Nome")     private String nome;
+    @JsonProperty("Telefone") private String telefone;
+    @JsonProperty("Email")    private String email;
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public String getNome() {
-        return nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
 
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }   
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

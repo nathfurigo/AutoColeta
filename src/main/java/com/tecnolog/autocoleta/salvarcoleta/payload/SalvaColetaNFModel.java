@@ -1,20 +1,27 @@
 package com.tecnolog.autocoleta.salvarcoleta.payload;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class SalvaColetaNFModel {
-    private Integer Id;       // se não usar, mantenha como opcional
-    private Integer Numero;   // <- o servidor costuma esperar "Numero"
-    private Integer Serie;    // <- se não houver, pode deixar null
-    private Double Valor;     // <- o servidor costuma esperar "Valor"
 
-    public Integer getId() { return Id; }
-    public void setId(Integer id) { Id = id; }
+    @JsonProperty("Id")     private Integer id;
+    @JsonProperty("Chave")  private String chave;
+    @JsonProperty("Numero") private Integer numero;   // Integer
+    @JsonProperty("Serie")  private Integer serie;    // Integer
+    @JsonProperty("Valor")  private Double valor;
 
-    public Integer getNumero() { return Numero; }
-    public void setNumero(Integer numero) { Numero = numero; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public Integer getSerie() { return Serie; }
-    public void setSerie(Integer serie) { Serie = serie; }
+    public String getChave() { return chave; }
+    public void setChave(String chave) { this.chave = chave; }
 
-    public Double getValor() { return Valor; }
-    public void setValor(Double valor) { Valor = valor; }
+    public Integer getNumero() { return numero; }
+    public void setNumero(Integer numero) { this.numero = numero; }
+
+    public Integer getSerie() { return serie; }
+    public void setSerie(Integer serie) { this.serie = serie; }
+
+    public Double getValor() { return valor; }
+    public void setValor(Double valor) { this.valor = valor; }
 }

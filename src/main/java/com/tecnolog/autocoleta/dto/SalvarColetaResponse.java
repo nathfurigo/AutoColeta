@@ -2,9 +2,6 @@ package com.tecnolog.autocoleta.dto;
 
 /**
  * Resposta do endpoint /api/v1/PedidoColeta/SalvaColeta
- * Convenção usada no legado:
- *   { "erro": false, "response": "12345" }
- * ou { "erro": true,  "response": "mensagem de erro" }
  */
 public class SalvarColetaResponse {
     private boolean erro;

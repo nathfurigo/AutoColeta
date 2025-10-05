@@ -1,91 +1,80 @@
 package com.tecnolog.autocoleta.salvarcoleta.payload;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDate;
 import java.util.List;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.NotBlank;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {
 
-    private String tokenHash;
+    @JsonProperty("TokenHash") private String tokenHash;
 
-    private int idPedidoColeta;
-    private int idCotacao;
+    @JsonProperty("IdPedidoColeta") private Integer idPedidoColeta;
+    @JsonProperty("IdCotacao")      private Integer idCotacao;
 
-    @NotNull
-    private Integer idRemetente;
-    @NotNull
-    private Integer idDestinatario;
-    @NotNull
-    private Long idDtm;
-    @NotNull
-    private Integer idTomador;
-    @NotNull
-    private Integer idLocalColeta;
+    @JsonProperty("IdDtm")          private Long idDtm;
+    @JsonProperty("IdRemetente")    private Integer idRemetente;
+    @JsonProperty("IdDestinatario") private Integer idDestinatario;
+    @JsonProperty("IdTomador")      private Integer idTomador;
+    @JsonProperty("IdLocalColeta")  private Integer idLocalColeta;
 
-    @NotNull
-    private LocalDate dtColeta;
-    @NotNull
-    private LocalDate dtEntrega;
-    @NotBlank
-    private String hrColetaInicio;
-    @NotBlank
-    private String hrColetaFim;
+    @JsonProperty("DtColeta")       private LocalDate dtColeta;
+    @JsonProperty("DtEntrega")      private LocalDate dtEntrega;
+    @JsonProperty("HrColetaInicio") private String hrColetaInicio;
+    @JsonProperty("HrColetaFim")    private String hrColetaFim;
 
-    @NotNull
-    private Integer idTipoColeta;
+    @JsonProperty("IdTipoColeta")        private Integer idTipoColeta;
+    @JsonProperty("TpModal")             private Integer tpModal;
+    @JsonProperty("IdFilialResponsavel") private Integer idFilialResponsavel;
+    @JsonProperty("IdAgente")            private Integer idAgente;
 
-    @NotNull
-    private Integer tpModal;
+    @JsonProperty("CdEnderecoCEP")       private String cdEnderecoCEP;
+    @JsonProperty("DsEndereco")          private String dsEndereco;
+    @JsonProperty("NrEnderecoNR")        private String nrEnderecoNR;
+    @JsonProperty("DsEnderecoBairro")    private String dsEnderecoBairro;
 
-    @NotNull
-    private Integer idFilialResponsavel;
-    private Integer idAgente;
+    // Nome oficial esperado pelo servidor:
+    @JsonProperty("DsEnderecoComplemento")
+    private String dsEnderecoComplemento;
 
-    @NotBlank
-    private String cdEnderecoCEP;
-    @NotBlank
-    private String dsEndereco;
-    @NotBlank
-    private String nrEnderecoNR;
-    @NotBlank
-    private String dsEnderecoBairro;
-    private String dsEnderecoComplento;
-    @NotNull
-    private Integer idEnderecoCidade;
+    @JsonProperty("IdEnderecoCidade") private Integer idEnderecoCidade;
 
-    private String nrTelefone;
-    private String dsSolicitante;
-    private String dsProcurarPor;
-    private String nrReferencia;
-    private String nrPedidoCliente;
-    private Integer idNaturezaCarga;
-    private Integer idEmbalagem;
+    @JsonProperty("NrTelefone")     private String nrTelefone;
+    @JsonProperty("DsSolicitante")  private String dsSolicitante;
+    @JsonProperty("DsProcurarPor")  private String dsProcurarPor;
+    @JsonProperty("NrReferencia")   private String nrReferencia;
+    @JsonProperty("NrPedidoCliente") private String nrPedidoCliente;
 
-    private List<SalvaColetaNFModel> NF;
-    private List<SalvaColetaDimensoesModel> Dimensoes;
-    private List<SalvaColetaMonitoramentoModel> Monitoramento;
-    private String dsComentarios;
+    @JsonProperty("IdNaturezaCarga") private Integer idNaturezaCarga;
+    @JsonProperty("IdEmbalagem")     private Integer idEmbalagem;
 
-    // ===== Getters e Setters =====
+    @JsonProperty("NF")         private List<SalvaColetaNFModel> NF;
+    @JsonProperty("Dimensoes")  private List<SalvaColetaDimensoesModel> Dimensoes;
+    @JsonProperty("Monitoramento") private List<SalvaColetaMonitoramentoModel> Monitoramento;
+
+    @JsonProperty("DsComentarios") private String dsComentarios;
+
+    // Getters/Setters
 
     public String getTokenHash() { return tokenHash; }
     public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
 
-    public int getIdPedidoColeta() { return idPedidoColeta; }
-    public void setIdPedidoColeta(int idPedidoColeta) { this.idPedidoColeta = idPedidoColeta; }
+    public Integer getIdPedidoColeta() { return idPedidoColeta; }
+    public void setIdPedidoColeta(Integer idPedidoColeta) { this.idPedidoColeta = idPedidoColeta; }
 
-    public int getIdCotacao() { return idCotacao; }
-    public void setIdCotacao(int idCotacao) { this.idCotacao = idCotacao; }
+    public Integer getIdCotacao() { return idCotacao; }
+    public void setIdCotacao(Integer idCotacao) { this.idCotacao = idCotacao; }
+
+    public Long getIdDtm() { return idDtm; }
+    public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
 
     public Integer getIdRemetente() { return idRemetente; }
     public void setIdRemetente(Integer idRemetente) { this.idRemetente = idRemetente; }
 
     public Integer getIdDestinatario() { return idDestinatario; }
     public void setIdDestinatario(Integer idDestinatario) { this.idDestinatario = idDestinatario; }
-
-    public Long getIdDtm() { return idDtm; }
-    public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
 
     public Integer getIdTomador() { return idTomador; }
     public void setIdTomador(Integer idTomador) { this.idTomador = idTomador; }
@@ -112,7 +101,7 @@ public class SalvaColetaModel {
     public void setTpModal(Integer tpModal) { this.tpModal = tpModal; }
 
     public Integer getIdFilialResponsavel() { return idFilialResponsavel; }
-    public void setIdFilialResponsavel(Integer idFilialResposavel) { this.idFilialResponsavel = idFilialResposavel; }
+    public void setIdFilialResponsavel(Integer idFilialResponsavel) { this.idFilialResponsavel = idFilialResponsavel; }
 
     public Integer getIdAgente() { return idAgente; }
     public void setIdAgente(Integer idAgente) { this.idAgente = idAgente; }
@@ -129,8 +118,12 @@ public class SalvaColetaModel {
     public String getDsEnderecoBairro() { return dsEnderecoBairro; }
     public void setDsEnderecoBairro(String dsEnderecoBairro) { this.dsEnderecoBairro = dsEnderecoBairro; }
 
-    public String getDsEnderecoComplento() { return dsEnderecoComplento; }
-    public void setDsEnderecoComplento(String dsEnderecoComplento) { this.dsEnderecoComplento = dsEnderecoComplento; }
+    public String getDsEnderecoComplemento() { return dsEnderecoComplemento; }
+    public void setDsEnderecoComplemento(String dsEnderecoComplemento) { this.dsEnderecoComplemento = dsEnderecoComplemento; }
+
+    // Compat com mapper antigo: "Complento"
+    public String getDsEnderecoComplento() { return dsEnderecoComplemento; }
+    public void setDsEnderecoComplento(String v) { this.dsEnderecoComplemento = v; }
 
     public Integer getIdEnderecoCidade() { return idEnderecoCidade; }
     public void setIdEnderecoCidade(Integer idEnderecoCidade) { this.idEnderecoCidade = idEnderecoCidade; }
@@ -160,10 +153,10 @@ public class SalvaColetaModel {
     public void setNF(List<SalvaColetaNFModel> NF) { this.NF = NF; }
 
     public List<SalvaColetaDimensoesModel> getDimensoes() { return Dimensoes; }
-    public void setDimensoes(List<SalvaColetaDimensoesModel> Dimensoes) { this.Dimensoes = Dimensoes; }
+    public void setDimensoes(List<SalvaColetaDimensoesModel> dimensoes) { this.Dimensoes = dimensoes; }
 
     public List<SalvaColetaMonitoramentoModel> getMonitoramento() { return Monitoramento; }
-    public void setMonitoramento(List<SalvaColetaMonitoramentoModel> Monitoramento) { this.Monitoramento = Monitoramento; }
+    public void setMonitoramento(List<SalvaColetaMonitoramentoModel> monitoramento) { this.Monitoramento = monitoramento; }
 
     public String getDsComentarios() { return dsComentarios; }
     public void setDsComentarios(String dsComentarios) { this.dsComentarios = dsComentarios; }

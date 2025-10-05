@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SalvarColetaFeignAdapter implements SalvarColetaClient {
-
     private final SalvarColetaFeign feign;
     private final String tokenHash;
 

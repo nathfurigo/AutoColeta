@@ -1,7 +1,11 @@
+server:
+  port: 8080
+
 spring:
-  jpa:
-    properties:
-      hibernate:
+  application:
+    name: autocoleta
+  profiles:
+    active: dev
   main:
     allow-bean-definition-overriding: true
   datasource:
@@ -10,46 +14,52 @@ spring:
     password: "BRU*980192@no"
     hikari:
       maximum-pool-size: 5
+  jpa:
+    open-in-view: false
+    properties: { }
   jackson:
+    # Datas como ISO (sem timestamps numéricos) e timezone São Paulo
     time-zone: America/Sao_Paulo
     serialization:
-      write-dates-as-timestamps: false   # <- usar kebab-case
-
-app:
-  dtm:
-    view: vw_dtm_pedidocoleta_unica
-    lockTable: dtm_automation_lock
-
-  salvarColeta:
-    # IMPORTANTE: base só com o host (o path vem no @PostMapping do Feign)
-    baseUrl: https://synclog.com.br
-    tokenHash: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
-    timeoutSeconds: 30
-
-  pedidos:
-    base-url: https://synclog.com.br
-    connect-timeout-ms: 5000
-    read-timeout-ms: 30000
-    security:
-      header: "Hash"
-      value: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
+      write-dates-as-timestamps: false
+    deserialization:
+      adjust-dates-to-context-time-zone: false
+    # Campos em PascalCase para bater com a API C#
+    property-naming-strategy: UPPER_CAMEL_CASE
+    default-property-inclusion: non_empty
 
 logging:
   level:
     root: INFO
     com.tecnolog.autocoleta: DEBUG
     feign: DEBUG
-    # se quiser ver o corpo completo dos requests/responses Feign:
     com.tecnolog.autocoleta.salvarcoleta: DEBUG
 
-feign:
-  client:
-    config:
-      salvarColeta:
-        connectTimeout: 30000
-        readTimeout: 30000
-        loggerLevel: FULL
-      pedidos:
-        connectTimeout: 5000
-        readTimeout: 30000
-        loggerLevel: FULL
+# ---------------- APP CUSTOM ----------------
+app:
+  scheduler:
+    fixed-delay-ms: 30000
+    batch-size: 5
+
+  dtm:
+    view: public.vw_dtm_pedidocoleta_unica
+    lock-table: public.dtm_automation_lock
+
+  defaults:
+    id-remetente: 1
+    id-destinatario: 1
+    id-tomador: 1
+    id-local-coleta: 1
+    id-tipo-coleta-default: 3
+    # "modal" é só informativo aqui — o mapper usa tpModal=1 por padrão
+    modal: rodoviario
+    id-filial-resposavel: 1      # (typo proposital p/ casar com AppProperties)
+    id-endereco-cidade: 999      # 999 => não setar; >0 e !=999 => setar
+    hr-inicio: "08:00"
+    hr-fim: "17:00"
+
+  salvarColeta:
+    # IMPORTANTE: apenas host/base da API; o path vem no @PostMapping do Feign
+    base-url: https://synclog.com.br
+    tokenHash: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
+    timeout-seconds: 30

@@ -2,8 +2,8 @@ package com.tecnolog.autocoleta.dtm;
 
 public class DtmPendingRow {
     private long idDtm;
-    private String jsonPedidoColeta; // vem da view (coluna json_pedidocoleta)
-    private Integer prioridade;      // opcional: pra ordenar
+    private String jsonPedidoColeta; 
+    private Integer prioridade;      
 
     public long getIdDtm() { return idDtm; }
     public void setIdDtm(long idDtm) { this.idDtm = idDtm; }

@@ -4,20 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SalvaColetaMonitoramentoModel {
 
-    @JsonProperty("Id")       private Integer id;
-    @JsonProperty("Nome")     private String nome;
-    @JsonProperty("Telefone") private String telefone;
-    @JsonProperty("Email")    private String email;
+    @JsonProperty("nome")     private String nome;
+    @JsonProperty("telefone") private String telefone;
+    @JsonProperty("email")    private String email;
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getNome() { return nome; }           public void setNome(String v) { nome = v; }
+    public String getTelefone() { return telefone; }   public void setTelefone(String v) { telefone = v; }
+    public String getEmail() { return email; }         public void setEmail(String v) { email = v; }
 }

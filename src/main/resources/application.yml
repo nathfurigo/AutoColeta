@@ -18,13 +18,11 @@ spring:
     open-in-view: false
     properties: { }
   jackson:
-    # Datas como ISO (sem timestamps numéricos) e timezone São Paulo
     time-zone: America/Sao_Paulo
     serialization:
       write-dates-as-timestamps: false
     deserialization:
       adjust-dates-to-context-time-zone: false
-    # Campos em PascalCase para bater com a API C#
     property-naming-strategy: UPPER_CAMEL_CASE
     default-property-inclusion: non_empty
 
@@ -51,15 +49,15 @@ app:
     id-tomador: 1
     id-local-coleta: 1
     id-tipo-coleta-default: 3
-    # "modal" é só informativo aqui — o mapper usa tpModal=1 por padrão
     modal: rodoviario
-    id-filial-resposavel: 1      # (typo proposital p/ casar com AppProperties)
-    id-endereco-cidade: 999      # 999 => não setar; >0 e !=999 => setar
+    id-filial-resposavel: 1
+    id-endereco-cidade: 999
     hr-inicio: "08:00"
     hr-fim: "17:00"
 
-  salvarColeta:
-    # IMPORTANTE: apenas host/base da API; o path vem no @PostMapping do Feign
-    base-url: https://synclog.com.br
-    tokenHash: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
+salvarColeta:
+    baseUrl: https://Hmg-beta.synclog.com.br
+    # --- NOVO TOKEN ATUALIZADO ---
+    tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
+    idGuid: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
     timeout-seconds: 30

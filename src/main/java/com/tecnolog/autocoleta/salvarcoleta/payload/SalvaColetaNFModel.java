@@ -1,27 +1,17 @@
 package com.tecnolog.autocoleta.salvarcoleta.payload;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
 
 public class SalvaColetaNFModel {
 
-    @JsonProperty("Id")     private Integer id;
-    @JsonProperty("Chave")  private String chave;
-    @JsonProperty("Numero") private Integer numero;   // Integer
-    @JsonProperty("Serie")  private Integer serie;    // Integer
-    @JsonProperty("Valor")  private Double valor;
+    @JsonProperty("id")    private Integer id;
+    @JsonProperty("nr")    private String nr;
+    @JsonProperty("vl")    private BigDecimal vl;
+    @JsonProperty("chave") private String chave;
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public String getChave() { return chave; }
-    public void setChave(String chave) { this.chave = chave; }
-
-    public Integer getNumero() { return numero; }
-    public void setNumero(Integer numero) { this.numero = numero; }
-
-    public Integer getSerie() { return serie; }
-    public void setSerie(Integer serie) { this.serie = serie; }
-
-    public Double getValor() { return valor; }
-    public void setValor(Double valor) { this.valor = valor; }
+    public Integer getId() { return id; }      public void setId(Integer v) { id = v; }
+    public String getNr() { return nr; }       public void setNr(String v) { nr = v; }
+    public BigDecimal getVl() { return vl; }   public void setVl(BigDecimal v) { vl = v; }
+    public String getChave() { return chave; } public void setChave(String v) { chave = v; }
 }

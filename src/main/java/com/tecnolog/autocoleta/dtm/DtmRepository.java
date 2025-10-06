@@ -14,9 +14,6 @@ public class DtmRepository {
         this.jdbc = jdbc;
     }
 
-    /**
-     * Busca pendências na view, ignorando DTM já travadas/processadas na tabela de lock.
-     */
     public List<DtmPendingRow> buscarPendentesOrdenado(int limit) {
         String sql =
             "SELECT v.\"DTM\"                  AS id_dtm, " +
@@ -25,7 +22,6 @@ public class DtmRepository {
             "  FROM public.vw_dtm_pedidocoleta_unica v " +
             "  LEFT JOIN public.dtm_automation_lock l " +
             "    ON l.id_dtm = v.\"DTM\" " +
-            // pega linhas SEM lock atual e não processadas
             " WHERE l.locked_at IS NULL " +
             "   AND COALESCE(l.processed, false) = false " +
             " ORDER BY v.prioridade_ordem NULLS LAST, " +

@@ -2,6 +2,7 @@ package com.tecnolog.autocoleta.dtm;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DtmJson {
@@ -87,15 +88,24 @@ public class DtmJson {
     }
 
     public static class Carga {
+        @JsonProperty("natureza")
         public String Descricao;
         public String Embalagem;
+        @JsonProperty("qtd")
         public Integer Quantidade;
+        @JsonProperty("comp_cm")
         public Double Comp;
+        @JsonProperty("larg_cm")
         public Double Larg;
+        @JsonProperty("alt_cm")
         public Double Alt;
+        @JsonProperty("kg_bruto")
         public Double PesoBruto;
+        @JsonProperty("kg_cubado")
         public Double PesoCubado;
+        @JsonProperty("kg_taxado")
         public Double PesoTaxado;
+        @JsonProperty("valor")
         public Double ValorMaterial;
 
         public String getDescricao() { return Descricao; }
@@ -118,6 +128,7 @@ public class DtmJson {
         public void setPesoTaxado(Double pesoTaxado) { PesoTaxado = pesoTaxado; }
         public Double getValorMaterial() { return ValorMaterial; }
         public void setValorMaterial(Double valorMaterial) { ValorMaterial = valorMaterial; }
+        
     }
 
     public String getId() { return Id; }

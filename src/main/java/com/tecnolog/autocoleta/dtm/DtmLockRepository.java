@@ -32,9 +32,8 @@ public class DtmLockRepository {
     }
 
     private void ensureTable() {
-        String tblQualified = props.getDtm().getLockTable(); // ex: "public.dtm_automation_lock" ou "dtm_automation_lock"
+        String tblQualified = props.getDtm().getLockTable();
 
-        // → nomes de índice SEM schema/ponto
         String tblOnly  = tblQualified.contains(".")
                 ? tblQualified.substring(tblQualified.indexOf('.') + 1)
                 : tblQualified;
@@ -43,7 +42,6 @@ public class DtmLockRepository {
         String idxProcessed = safeBase + "_processed_idx";
         String idxLocked    = safeBase + "_locked_idx";
 
-        // 1) cria tabela (se não existir)
         String createSql =
             "CREATE TABLE IF NOT EXISTS " + tblQualified + " (" +
             "  id_dtm BIGINT PRIMARY KEY, " +
@@ -54,10 +52,8 @@ public class DtmLockRepository {
             ")";
         jdbc.execute(createSql);
 
-        // 2) garante coluna locked_at (caso tabela antiga já exista sem ela)
         jdbc.execute("ALTER TABLE " + tblQualified + " ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ NULL");
 
-        // 3) índices (nomes sem ‘.’)
         jdbc.execute("CREATE INDEX IF NOT EXISTS " + idxProcessed + " ON " + tblQualified + " (processed)");
         jdbc.execute("CREATE INDEX IF NOT EXISTS " + idxLocked    + " ON " + tblQualified + " (locked_at)");
 
@@ -67,13 +63,11 @@ public class DtmLockRepository {
     public boolean tryLock(long idDtm) {
         String tbl = props.getDtm().getLockTable();
 
-        // cria o registro se não existir
         String insertIfNotExists =
             "INSERT INTO " + tbl + " (id_dtm, processed) " +
             "SELECT ?, FALSE WHERE NOT EXISTS (SELECT 1 FROM " + tbl + " WHERE id_dtm = ?)";
         jdbc.update(insertIfNotExists, idDtm, idDtm);
 
-        // lock simples: se ainda não processado, consideramos “travado” para este worker
         Boolean processed = jdbc.queryForObject(
             "SELECT processed FROM " + tbl + " WHERE id_dtm = ?",
             Boolean.class, idDtm

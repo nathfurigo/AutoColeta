@@ -42,7 +42,6 @@ public class AppProperties {
         public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
     }
 
-    /** Defaults para preenchimento do payload quando o DTM não trouxer valores */
     public static class Defaults {
         private Integer idRemetente;
         private Integer idDestinatario;
@@ -54,7 +53,8 @@ public class AppProperties {
         public Modal getModal() { return modal; }
         public void setModal(Modal modal) { this.modal = modal; }        
         private Integer idFilialResposavel;     
-        private Integer idEnderecoCidade;        
+        private Integer idEnderecoCidade;
+        private Integer idAgente;
 
         private String hrInicio = "08:00";
         private String hrFim    = "17:00";
@@ -82,6 +82,8 @@ public class AppProperties {
         public Integer getIdEnderecoCidade() { return idEnderecoCidade; }
         public void setIdEnderecoCidade(Integer idEnderecoCidade) { this.idEnderecoCidade = idEnderecoCidade; }
 
+        public Integer getIdAgente() { return idAgente; }
+        public void setIdAgente(Integer idAgente) { this.idAgente = idAgente; }
         public String getHrInicio() { return hrInicio; }
         public void setHrInicio(String hrInicio) { this.hrInicio = hrInicio; }
 

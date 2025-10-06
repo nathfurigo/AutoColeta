@@ -4,24 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SalvaColetaDimensoesModel {
 
-    @JsonProperty("Qtd")         private Integer qtd;
-    @JsonProperty("Comprimento") private Double comprimento;
-    @JsonProperty("Largura")     private Double largura;
-    @JsonProperty("Altura")      private Double altura;
-    @JsonProperty("Kg")          private Double kg;
+    @JsonProperty("id")   private Integer id;
+    @JsonProperty("comp") private Double comp;
+    @JsonProperty("larg") private Double larg;
+    @JsonProperty("alt")  private Double alt;
+    @JsonProperty("qt")   private Integer qt;
+    @JsonProperty("kg")   private Double kg;
 
-    public Integer getQtd() { return qtd; }
-    public void setQtd(Integer qtd) { this.qtd = qtd; }
-
-    public Double getComprimento() { return comprimento; }
-    public void setComprimento(Double comprimento) { this.comprimento = comprimento; }
-
-    public Double getLargura() { return largura; }
-    public void setLargura(Double largura) { this.largura = largura; }
-
-    public Double getAltura() { return altura; }
-    public void setAltura(Double altura) { this.altura = altura; }
-
-    public Double getKg() { return kg; }
-    public void setKg(Double kg) { this.kg = kg; }
+    public Integer getId() { return id; }   public void setId(Integer v) { id = v; }
+    public Double getComp() { return comp; }public void setComp(Double v) { comp = v; }
+    public Double getLarg() { return larg; }public void setLarg(Double v) { larg = v; }
+    public Double getAlt() { return alt; }  public void setAlt(Double v) { alt = v; }
+    public Integer getQt() { return qt; }   public void setQt(Integer v) { qt = v; }
+    public Double getKg() { return kg; }    public void setKg(Double v) { kg = v; }
 }

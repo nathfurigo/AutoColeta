@@ -36,7 +36,7 @@ public class DtmToSalvaColetaMapper {
     public SalvaColetaModel map(DtmPendingRow row) {
         try {
             DtmJson dtmJson = om.readValue(row.getJsonPedidoColeta(), DtmJson.class);
-            SalvaColetaModel req = new SalvaColetaModel();
+            SalvaColetaModel req = om.readValue(row.getJsonPedidoColeta(), SalvaColetaModel.class);
             AppProperties.Defaults defaults = props.getDefaults();
 
             // --- MAPEAMENTO ALINHADO AO JSON ---
@@ -153,7 +153,8 @@ public class DtmToSalvaColetaMapper {
 
             return req;
         } catch (Exception e) {
-            throw new IllegalStateException("Falha ao mapear DTM " + row.getIdDtm() + " para SalvaColetaModel", e);
+            throw new IllegalStateException("Falha ao mapear JSON da view para SalvaColetaModel para DTM " + row.getIdDtm(), e);
+
         }
     }
 

@@ -53,7 +53,7 @@ public class DtmProcessingService {
             log.info("DTM {} - Coleta {} gerada com sucesso. Tentando registrar ocorrência...", idDtm, numeroColetaGerada);
 
             salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada);
-            dtmLockRepository.markProcessed(idDtm);
+            dtmLockRepository.markProcessed(idDtm, numeroColetaGerada);
             log.info("DTM {} - Ocorrência para coleta {} registrada com sucesso.", idDtm, numeroColetaGerada);
 
         } catch (Exception e) {

@@ -7,95 +7,87 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
+import java.time.OffsetDateTime;
 
 @Repository
 public class DtmLockRepository {
     private static final Logger log = LoggerFactory.getLogger(DtmLockRepository.class);
 
     private final JdbcTemplate jdbc;
-    private final AppProperties props;
+    private final String lockTable;
 
     public DtmLockRepository(JdbcTemplate jdbc, AppProperties props) {
         this.jdbc = jdbc;
-        this.props = props;
+        this.lockTable = props.getDtm().getLockTable();
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
         try {
-            ensureTable();
+            ensureTableAndColumns();
         } catch (Exception e) {
-            log.error("Falha ao garantir tabela de lock '{}'", props.getDtm().getLockTable(), e);
+            log.error("Falha ao garantir a estrutura da tabela de lock '{}'", lockTable, e);
         }
     }
 
-    private void ensureTable() {
-        String tblQualified = props.getDtm().getLockTable();
-
-        String tblOnly  = tblQualified.contains(".")
-                ? tblQualified.substring(tblQualified.indexOf('.') + 1)
-                : tblQualified;
-        String safeBase = tblOnly.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase(Locale.ROOT);
-
-        String idxProcessed = safeBase + "_processed_idx";
-        String idxLocked    = safeBase + "_locked_idx";
-
-        String createSql =
-            "CREATE TABLE IF NOT EXISTS " + tblQualified + " (" +
+    private void ensureTableAndColumns() {
+        String createTableSql =
+            "CREATE TABLE IF NOT EXISTS " + lockTable + " (" +
             "  id_dtm BIGINT PRIMARY KEY, " +
+            "  locked_at TIMESTAMPTZ NULL, " +
+            "  processing BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  processing_at TIMESTAMPTZ NULL, " +
             "  processed BOOLEAN NOT NULL DEFAULT FALSE, " +
             "  processed_at TIMESTAMPTZ NULL, " +
             "  last_error TEXT NULL, " +
-            "  locked_at TIMESTAMPTZ NULL" +
+            "  coleta_gerada VARCHAR(50) NULL" +
             ")";
-        jdbc.execute(createSql);
+        jdbc.execute(createTableSql);
 
-        jdbc.execute("ALTER TABLE " + tblQualified + " ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ NULL");
+        jdbc.execute("ALTER TABLE " + lockTable + " ADD COLUMN IF NOT EXISTS processing BOOLEAN NOT NULL DEFAULT FALSE");
+        jdbc.execute("ALTER TABLE " + lockTable + " ADD COLUMN IF NOT EXISTS processing_at TIMESTAMPTZ NULL");
+        jdbc.execute("ALTER TABLE " + lockTable + " ADD COLUMN IF NOT EXISTS coleta_gerada VARCHAR(50) NULL");
 
-        jdbc.execute("CREATE INDEX IF NOT EXISTS " + idxProcessed + " ON " + tblQualified + " (processed)");
-        jdbc.execute("CREATE INDEX IF NOT EXISTS " + idxLocked    + " ON " + tblQualified + " (locked_at)");
-
-        log.info("Tabela de lock '{}' validada (índices: '{}', '{}').", tblQualified, idxProcessed, idxLocked);
+        log.info("Tabela de lock '{}' validada com sucesso.", lockTable);
     }
 
+    @Transactional
     public boolean tryLock(long idDtm) {
-        String tbl = props.getDtm().getLockTable();
+        String upsertSql = "INSERT INTO " + lockTable + " (id_dtm) VALUES (?) ON CONFLICT (id_dtm) DO NOTHING";
+        jdbc.update(upsertSql, idDtm);
 
-        String insertIfNotExists =
-            "INSERT INTO " + tbl + " (id_dtm, processed) " +
-            "SELECT ?, FALSE WHERE NOT EXISTS (SELECT 1 FROM " + tbl + " WHERE id_dtm = ?)";
-        jdbc.update(insertIfNotExists, idDtm, idDtm);
+        String lockSql = "UPDATE " + lockTable + " " +
+                         "SET processing = TRUE, processing_at = ?, locked_at = ? " +
+                         "WHERE id_dtm = ? AND processing = FALSE AND processed = FALSE";
+        
+        int rowsAffected = jdbc.update(lockSql, OffsetDateTime.now(), OffsetDateTime.now(), idDtm);
 
-        Boolean processed = jdbc.queryForObject(
-            "SELECT processed FROM " + tbl + " WHERE id_dtm = ?",
-            Boolean.class, idDtm
-        );
-        return processed != null && !processed;
+        return rowsAffected > 0;
     }
 
-    public void markProcessed(long idDtm) {
-        String sql = "UPDATE " + props.getDtm().getLockTable() +
-                     " SET processed = TRUE, processed_at = now(), last_error = NULL " +
-                     "WHERE id_dtm = ?";
-        int n = jdbc.update(sql, idDtm);
-        if (n == 0) {
-            String ins = "INSERT INTO " + props.getDtm().getLockTable() +
-                         " (id_dtm, processed, processed_at) VALUES (?, TRUE, now())";
-            jdbc.update(ins, idDtm);
-        }
+    public void markProcessed(long idDtm, String coletaGerada) {
+        String sql = "INSERT INTO " + lockTable + " (id_dtm, processing, processed, processed_at, coleta_gerada, last_error) " +
+                     "VALUES (?, FALSE, TRUE, ?, ?, NULL) " +
+                     "ON CONFLICT (id_dtm) DO UPDATE SET " +
+                     "  processing = FALSE, " +
+                     "  processed = TRUE, " +
+                     "  processed_at = EXCLUDED.processed_at, " +
+                     "  coleta_gerada = EXCLUDED.coleta_gerada, " +
+                     "  last_error = NULL"; 
+
+        jdbc.update(sql, idDtm, OffsetDateTime.now(), coletaGerada);
     }
 
     public void markError(long idDtm, String msg) {
-        String sql = "UPDATE " + props.getDtm().getLockTable() +
-                     " SET processed = FALSE, last_error = ? " +
-                     "WHERE id_dtm = ?";
-        int n = jdbc.update(sql, msg, idDtm);
-        if (n == 0) {
-            String ins = "INSERT INTO " + props.getDtm().getLockTable() +
-                         " (id_dtm, processed, processed_at, last_error) VALUES (?, FALSE, NULL, ?)";
-            jdbc.update(ins, idDtm, msg);
-        }
+        String sql = "INSERT INTO " + lockTable + " (id_dtm, processing, processed, last_error) " +
+                     "VALUES (?, FALSE, FALSE, ?) " +
+                     "ON CONFLICT (id_dtm) DO UPDATE SET " +
+                     "  processing = FALSE, " + 
+                     "  processed = FALSE, " +
+                     "  last_error = EXCLUDED.last_error";
+        
+        jdbc.update(sql, idDtm, msg);
     }
 }

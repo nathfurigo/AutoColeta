@@ -15,14 +15,14 @@ public class SchedulerService {
 
     private final DtmAutomationService automationService;
 
-    @Value("${app.scheduler.batch-size:100}")
+    @Value("${app.scheduler.batch-size:10}")
     private int batchSize;
 
     public SchedulerService(DtmAutomationService automationService) {
         this.automationService = automationService;
     }
 
-    @Scheduled(fixedDelayString = "${app.scheduler.fixed-delay-ms:30000}")
+    @Scheduled(fixedDelayString = "${app.scheduler.fixed-delay-ms:15000}")
     public void run() {
         log.info("Scheduler iniciado para processar lote de DTMs...");
         try {

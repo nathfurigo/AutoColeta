@@ -28,13 +28,13 @@ spring:
       client:
         config:
           default:
-            connectTimeout: 10000
-            readTimeout: 30000
+            connectTimeout: 15000
+            readTimeout: 15000
             loggerLevel: full
           salvarColeta:
             url: ${app.salvarColeta.baseUrl} 
-            connectTimeout: 30000
-            readTimeout: 60000
+            connectTimeout: 15000
+            readTimeout: 15000
             loggerLevel: full
           adicionarOcorrencia: 
             url: ${app.salvarOcorrencia.baseUrl}
@@ -50,8 +50,8 @@ logging:
 # ---------------- CONFIGURAÇÕES DA APLICAÇÃO ----------------
 app:
   scheduler:
-    fixed-delay-ms: 30000
-    batch-size: 100
+    fixed-delay-ms: 15000
+    batch-size: 10
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"

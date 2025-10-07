@@ -10,6 +10,7 @@ import com.tecnolog.autocoleta.salvarcoleta.payload.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {
 
+    @JsonProperty("idDtm")            private Long idDtm;
     @JsonProperty("TokenHash")        private String tokenHash;
     @JsonProperty("idPedidoColeta")   private Integer idPedidoColeta;
     @JsonProperty("idRemetente")      private Integer idRemetente;
@@ -53,6 +54,14 @@ public class SalvaColetaModel {
 
     @JsonProperty("dsComentarios") private String dsComentarios;
 
+    public Long getIdDtm() {
+        return idDtm;
+    }
+
+    public void setIdDtm(Long idDtm) {
+        this.idDtm = idDtm;
+    }
+    
     public String getTokenHash() {
         return tokenHash;
     }

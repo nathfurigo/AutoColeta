@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg"
+    username: "postgres"
+    password: "BRU*980192@no"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 1200000
+      keepalive-time: 300000
+      idle-timeout: 600000
+      connection-timeout: 30000

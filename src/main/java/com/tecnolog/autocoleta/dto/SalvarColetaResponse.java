@@ -6,13 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SalvarColetaResponse {
 
-    @JsonProperty("erro") // Garante o mapeamento
+    @JsonProperty("erro") 
     private boolean erro;
 
-    @JsonProperty("response") // Garante o mapeamento
+    @JsonProperty("response") 
     private String response;
 
-    // Getters e Setters devem estar presentes e corretos
     public boolean isErro() { return erro; }
     public void setErro(boolean erro) { this.erro = erro; }
 

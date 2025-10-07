@@ -5,59 +5,72 @@ spring:
   application:
     name: autocoleta
   profiles:
-    active: dev
+    active: prod
   main:
     allow-bean-definition-overriding: true
-  datasource:
-    url: jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg
-    username: postgres
-    password: "BRU*980192@no"
-    hikari:
-      maximum-pool-size: 5
   jpa:
     open-in-view: false
-    properties: { }
+    repositories:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   jackson:
     time-zone: America/Sao_Paulo
     serialization:
       write-dates-as-timestamps: false
     deserialization:
       adjust-dates-to-context-time-zone: false
-    property-naming-strategy: UPPER_CAMEL_CASE
     default-property-inclusion: non_empty
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 30000
+            loggerLevel: full
+          salvarColeta:
+            url: ${app.salvarColeta.baseUrl} 
+            connectTimeout: 30000
+            readTimeout: 60000
+            loggerLevel: full
+          adicionarOcorrencia: 
+            url: ${app.salvarOcorrencia.baseUrl}
+          authApi: 
+            url: ${app.salvarOcorrencia.baseUrl}
 
 logging:
   level:
     root: INFO
     com.tecnolog.autocoleta: DEBUG
     feign: DEBUG
-    com.tecnolog.autocoleta.salvarcoleta: DEBUG
 
-# ---------------- APP CUSTOM ----------------
+# ---------------- CONFIGURAÇÕES DA APLICAÇÃO ----------------
 app:
   scheduler:
     fixed-delay-ms: 30000
-    batch-size: 5
-
+    batch-size: 100
   dtm:
-    view: public.vw_dtm_pedidocoleta_unica
-    lock-table: public.dtm_automation_lock
-
+    view: "public.vw_dtm_pedidocoleta_unica"
+    lock-table: "public.dtm_automation_lock"
+  salvarColeta:
+    baseUrl: "https://Hmg-beta.synclog.com.br"
+    tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
+    timeout-seconds: 30
+  salvarOcorrencia:
+    baseUrl: "https://dev.synclog.com.br"
+    system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
     id-remetente: 1
     id-destinatario: 1
     id-tomador: 1
     id-local-coleta: 1
     id-tipo-coleta-default: 3
-    modal: rodoviario
     id-filial-resposavel: 1
     id-endereco-cidade: 999
+    id-agente: 10
     hr-inicio: "08:00"
     hr-fim: "17:00"
-
-salvarColeta:
-    baseUrl: https://Hmg-beta.synclog.com.br
-    # --- NOVO TOKEN ATUALIZADO ---
-    tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
-    idGuid: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
-    timeout-seconds: 30
+    modal: RODOVIARIO

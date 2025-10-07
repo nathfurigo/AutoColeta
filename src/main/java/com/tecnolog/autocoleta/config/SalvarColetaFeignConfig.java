@@ -1,21 +1,19 @@
 package com.tecnolog.autocoleta.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import com.tecnolog.autocoleta.config.AppProperties; // Importe a classe de propriedades
 import feign.RequestInterceptor;
 
-@Configuration
 public class SalvarColetaFeignConfig {
 
-    @Value("${app.salvarColeta.tokenHash}")
-    private String tokenHash;
-
     @Bean
-    public RequestInterceptor salvarColetaHashHeaderInterceptor() {
+    public RequestInterceptor salvarColetaHashHeaderInterceptor(AppProperties appProperties) {
         return template -> {
             if (!template.headers().containsKey("Hash")) {
-                template.header("Hash", tokenHash);
+                String tokenHash = appProperties.getSalvarColeta().getTokenHash();
+                if (tokenHash != null && !tokenHash.isBlank()) {
+                    template.header("Hash", tokenHash.trim());
+                }
             }
         };
     }

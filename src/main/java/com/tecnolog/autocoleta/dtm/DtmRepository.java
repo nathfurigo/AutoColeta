@@ -1,3 +1,4 @@
+// DtmRepository.java (AJUSTADO)
 package com.tecnolog.autocoleta.dtm;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,16 +17,16 @@ public class DtmRepository {
 
     public List<DtmPendingRow> buscarPendentesOrdenado(int limit) {
         String sql =
-            "SELECT v.\"DTM\"                  AS id_dtm, " +
+            "SELECT v.\"DTM\" AS id_dtm, " +
             "       v.json_pedidocoleta::text AS json_payload, " +
-            "       v.prioridade_ordem        AS prioridade " +
+            "       v.prioridade_ordem AS prioridade " +
             "  FROM public.vw_dtm_pedidocoleta_unica v " +
             "  LEFT JOIN public.dtm_automation_lock l " +
             "    ON l.id_dtm = v.\"DTM\" " +
-            " WHERE l.locked_at IS NULL " +
-            "   AND COALESCE(l.processed, false) = false " +
-            " ORDER BY v.prioridade_ordem NULLS LAST, " +
-            "          v.\"Data Coleta\" ASC, " +
+            " WHERE (l.locked_at IS NULL AND COALESCE(l.processing, false) = false AND COALESCE(l.processed, false) = false) " +
+            "    OR (l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = false AND COALESCE(l.processing, false) = false) " + 
+            " ORDER BY " +
+            "          CASE WHEN l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = FALSE THEN 0 ELSE v.prioridade_ordem END NULLS LAST, " + 
             "          v.\"Hora Coleta\" ASC, " +
             "          v.\"DTM\" ASC " +
             " LIMIT ?";

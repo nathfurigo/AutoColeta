@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tecnolog.autocoleta.salvarcoleta.SalvarColetaClient;
 import com.tecnolog.autocoleta.dtm.DtmLockRepository;
+import com.tecnolog.autocoleta.dtm.DtmLockStatus;
 import com.tecnolog.autocoleta.dtm.DtmPendingRow;
 import com.tecnolog.autocoleta.dtm.DtmToSalvaColetaMapper;
 import com.tecnolog.autocoleta.dto.SalvaColetaModel;
@@ -37,11 +38,32 @@ public class DtmProcessingService {
     public void processarDtm(DtmPendingRow dtmRow) {
         long idDtm = dtmRow.getIdDtm();
         String numeroColetaGerada = null;
+        
+        DtmLockStatus initialLockStatus = dtmLockRepository.getLockStatus(idDtm);
 
         try {
+            if (initialLockStatus != null && initialLockStatus.getColetaGerada() != null && !initialLockStatus.isProcessed()) {
+                numeroColetaGerada = initialLockStatus.getColetaGerada();
+
+                log.warn("DTM {} já tem coleta {} gerada, mas status está pendente. Tentando registrar ocorrência novamente...", 
+                    idDtm, numeroColetaGerada);
+
+                salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada); 
+                
+                dtmLockRepository.markProcessed(idDtm, numeroColetaGerada);
+                log.info("DTM {} - Ocorrência para coleta {} registrada com sucesso (Repro.).", idDtm, numeroColetaGerada);
+                return;
+            }
+            
             SalvaColetaModel requestPayload = dtmMapper.map(dtmRow);
             log.debug("Payload para API SalvarColeta (DTM {}): {}", idDtm, safeJson(requestPayload));
 
+            try {
+                salvarColetaClient.tryAdicionarOcorrenciaTokenOnly(idDtm);
+            } catch (RuntimeException e) {
+                throw new RuntimeException("Pré-requisito falhou: Não foi possível obter AccessToken para DTM " + idDtm + ". Coleta não será gerada.", e);
+            }
+            
             SalvarColetaResponse response = salvarColetaClient.salvar(requestPayload);
             log.info("Resposta da API SalvarColeta para DTM {}: erro={}, response='{}'", idDtm, response.isErro(), response.getResponse());
 
@@ -52,22 +74,21 @@ public class DtmProcessingService {
             numeroColetaGerada = response.getResponse();
             log.info("DTM {} - Coleta {} gerada com sucesso. Tentando registrar ocorrência...", idDtm, numeroColetaGerada);
 
-            salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada);
+            salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada); 
             dtmLockRepository.markProcessed(idDtm, numeroColetaGerada);
             log.info("DTM {} - Ocorrência para coleta {} registrada com sucesso.", idDtm, numeroColetaGerada);
 
         } catch (Exception e) {
             String errorMessage;
             if (numeroColetaGerada != null) {
-                errorMessage = String.format("CRÍTICO: Coleta %s foi criada para a DTM %d, mas o registro da ocorrência falhou. Causa: %s",
+                errorMessage = String.format("CRÍTICO: Coleta %s foi criada para a DTM %d, mas o registro da ocorrência final falhou. Causa: %s",
                         numeroColetaGerada, idDtm, e.getMessage());
             } else {
-                errorMessage = "Falha ao processar DTM " + idDtm + ". Causa: " + e.getMessage();
+                errorMessage = "Falha ao processar DTM " + idDtm + ". Coleta não foi gerada. Causa: " + e.getMessage();
             }
 
             log.error(errorMessage);
-            dtmLockRepository.markError(idDtm, errorMessage);
-
+            dtmLockRepository.markError(idDtm, errorMessage); 
             throw new RuntimeException(errorMessage, e);
         }
     }

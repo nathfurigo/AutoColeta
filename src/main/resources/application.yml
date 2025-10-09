@@ -51,7 +51,7 @@ logging:
 app:
   scheduler:
     fixed-delay-ms: 15000
-    batch-size: 10
+    batch-size: 100
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"
@@ -63,14 +63,6 @@ app:
     baseUrl: "https://dev.synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
-    id-remetente: 1
-    id-destinatario: 1
-    id-tomador: 1
-    id-local-coleta: 1
-    id-tipo-coleta-default: 3
-    id-filial-resposavel: 1
-    id-endereco-cidade: 999
-    id-agente: 10
     hr-inicio: "08:00"
-    hr-fim: "17:00"
+    hr-fim: "16:00"
     modal: RODOVIARIO

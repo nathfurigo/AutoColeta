@@ -39,11 +39,12 @@ public class SalvarColetaFeignAdapter implements SalvarColetaClient {
 
     @Override
     public void adicionarOcorrencia(long idDtm, String numeroColeta) {
+        
         AuthApiClient.AuthRequest authRequest = new AuthApiClient.AuthRequest(this.systemToken);
         AuthApiClient.AuthResponse authResponse = authApiClient.getAccessToken(authRequest);
 
         if (authResponse == null || authResponse.isError() || authResponse.getAccessToken() == null) {
-            throw new RuntimeException("Falha ao obter AccessToken para a API de Ocorrência.");
+            throw new RuntimeException("Falha ao obter AccessToken para a API de Ocorrência (Etapa Final).");
         }
         String accessToken = authResponse.getAccessToken();
 
@@ -58,6 +59,35 @@ public class SalvarColetaFeignAdapter implements SalvarColetaClient {
 
         if (response != null && response.isError()) {
             throw new RuntimeException("API de Ocorrência retornou erro: " + response.getMessage());
+        }
+    }
+
+    @Override
+    public void tryAdicionarOcorrenciaTokenOnly(long idDtm) {
+        AuthApiClient.AuthRequest authRequest = new AuthApiClient.AuthRequest(this.systemToken);
+        AuthApiClient.AuthResponse authResponse = authApiClient.getAccessToken(authRequest);
+
+        if (authResponse == null || authResponse.isError() || authResponse.getAccessToken() == null) {
+            throw new RuntimeException("Falha na Autenticação (Auth). Não foi possível obter AccessToken.");
+        }
+        String accessToken = authResponse.getAccessToken();
+        
+        AddOcorrenciaRequest request = new AddOcorrenciaRequest();
+        request.setIdDtm(idDtm);
+        request.setIdOcorrencia(99); 
+        request.setDsObservacoes("TESTE DE CONEXÃO E AUTENTICAÇÃO (Pré-requisito)");
+        request.setDtOcorrencia(OffsetDateTime.now());
+        request.setAccessToken(accessToken);
+
+        try {
+            SyncLogOcorrenciaResponse response = adicionarOcorrenciaFeign.adicionarOcorrencia(request);
+            
+            if (response != null && response.isError() && !response.getMessage().contains("DTM Não Encontrado")) {
+                throw new RuntimeException("API de Ocorrência está rejeitando a requisição: " + response.getMessage());
+            }
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Falha na conexão com a API de Ocorrência.", e);
         }
     }
 }

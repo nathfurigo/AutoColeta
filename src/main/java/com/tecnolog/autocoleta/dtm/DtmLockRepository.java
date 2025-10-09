@@ -1,6 +1,7 @@
 package com.tecnolog.autocoleta.dtm;
 
 import com.tecnolog.autocoleta.config.AppProperties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Repository
 public class DtmLockRepository {
@@ -30,6 +32,21 @@ public class DtmLockRepository {
         } catch (Exception e) {
             log.error("Falha ao garantir a estrutura da tabela de lock '{}'", lockTable, e);
         }
+    }
+
+    public DtmLockStatus getLockStatus(long idDtm) {
+        String sql = "SELECT locked_at, processing, processed, coleta_gerada FROM " + lockTable + " WHERE id_dtm = ?";
+        
+        List<DtmLockStatus> results = jdbc.query(sql, new Object[]{idDtm}, (rs, i) -> {
+            DtmLockStatus status = new DtmLockStatus();
+            status.lockedAt = rs.getObject("locked_at", OffsetDateTime.class);
+            status.processing = rs.getBoolean("processing");
+            status.processed = rs.getBoolean("processed");
+            status.coletaGerada = rs.getString("coleta_gerada");
+            return status;
+        });
+
+        return results.isEmpty() ? null : results.get(0);
     }
 
     private void ensureTableAndColumns() {

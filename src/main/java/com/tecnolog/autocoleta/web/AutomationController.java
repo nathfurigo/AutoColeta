@@ -23,7 +23,7 @@ public class AutomationController {
         method = { RequestMethod.POST, RequestMethod.GET },
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<Map<String, Object>> runBatch(@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<Map<String, Object>> runBatch(@RequestParam(defaultValue = "100") int limit) {
         if (limit < 1) {
             limit = 1;
         }

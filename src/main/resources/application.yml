@@ -28,13 +28,13 @@ spring:
       client:
         config:
           default:
-            connectTimeout: 15000
-            readTimeout: 15000
+            connectTimeout: 60000
+            readTimeout: 60000
             loggerLevel: full
           salvarColeta:
             url: ${app.salvarColeta.baseUrl} 
-            connectTimeout: 15000
-            readTimeout: 15000
+            connectTimeout: 60000
+            readTimeout: 60000
             loggerLevel: full
           adicionarOcorrencia: 
             url: ${app.salvarOcorrencia.baseUrl}
@@ -51,7 +51,7 @@ logging:
 app:
   scheduler:
     fixed-delay-ms: 15000
-    batch-size: 100
+    batch-size: 10
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"
@@ -63,6 +63,5 @@ app:
     baseUrl: "https://dev.synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
-    hr-inicio: "08:00"
-    hr-fim: "16:00"
-    modal: RODOVIARIO
+    hr-inicio: "00:00"
+    hr-fim: "23:59"

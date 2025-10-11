@@ -28,7 +28,7 @@ public class DataSourceConfig {
   }
 
   @Primary
-  @Bean(name = "postgresTxManager")
+  @Bean(name = "transactionManager")
   public DataSourceTransactionManager postgresTxManager(@Qualifier("postgresDataSource") DataSource ds) {
     return new DataSourceTransactionManager(ds);
   }

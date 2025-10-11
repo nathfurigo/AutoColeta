@@ -28,7 +28,7 @@ public class DtmAutomationService {
         this.processingService = processingService;
     }
 
-    @Transactional // Usará o bean "transactionManager" por convenção
+    @Transactional
     public Map<String, Integer> processBatch(int limit) {
         List<DtmPendingRow> pendentes = dtmRepository.buscarPendentesOrdenado(limit);
         if (pendentes == null || pendentes.isEmpty()) {
@@ -39,7 +39,6 @@ public class DtmAutomationService {
         int failureCount = 0;
 
         for (DtmPendingRow row : pendentes) {
-            // Tenta obter o lock para o DTM. Se falhar, outro processo já o pegou.
             if (!lockRepository.tryLock(row.getIdDtm())) {
                 continue;
             }

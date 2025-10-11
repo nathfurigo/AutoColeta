@@ -4,20 +4,8 @@ server:
 spring:
   application:
     name: autocoleta
-  # Ativa o perfil de produção. As configurações de 'application-prod.yml' serão carregadas.
-  profiles:
-    active: prod
   main:
     allow-bean-definition-overriding: true
-  jpa:
-    open-in-view: false
-    repositories:
-      enabled: false
-  # Desativa a autoconfiguração do banco de dados, pois faremos isso manualmente na classe DataSourceConfig.
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   jackson:
     time-zone: America/Sao_Paulo
     serialization:
@@ -31,17 +19,20 @@ spring:
         config:
           default:
             connectTimeout: 15000
-            readTimeout: 15000
+            readTimeout: 60000
             loggerLevel: full
           salvarColeta:
-            url: ${app.salvarColeta.baseUrl}
             connectTimeout: 15000
-            readTimeout: 15000
+            readTimeout: 60000
             loggerLevel: full
           adicionarOcorrencia:
-            url: ${app.salvarOcorrencia.baseUrl}
+            connectTimeout: 15000
+            readTimeout: 60000
+            loggerLevel: full
           authApi:
-            url: ${app.salvarOcorrencia.baseUrl}
+            connectTimeout: 15000
+            readTimeout: 60000
+            loggerLevel: full
 
 logging:
   level:
@@ -49,11 +40,10 @@ logging:
     com.tecnolog.autocoleta: DEBUG
     feign: DEBUG
 
-# ---------------- CONFIGURAÇÕES DA APLICAÇÃO (COMUNS A TODOS AMBIENTES) ----------------
+# ---------------- CONFIGURAÇÕES DA APLICAÇÃO (COMUM) ----------------
 app:
   scheduler:
-    fixed-delay-ms: 15000
-    batch-size: 100
+    batch-size: 100            # <-- mapeia para AppProperties.Scheduler.batchSize
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"
@@ -65,6 +55,6 @@ app:
     baseUrl: "https://dev.synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
-    hr-inicio: "00:00"
-    hr-fim: "23:59"
-    modal: RODOVIARIO
+    hr-inicio: "00:00"         # relaxed binding -> hrInicio
+    hr-fim: "23:59"            # relaxed binding -> hrFim
+    modal: RODOVIARIO          # enum em AppProperties.Defaults.Modal

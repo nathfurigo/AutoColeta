@@ -5,7 +5,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "authApi")
+@FeignClient(
+    name = "authApi",
+    url = "${app.salvarOcorrencia.baseUrl}"
+)
 public interface AuthApiClient {
 
     @PostMapping(value = "/api/v1/Auth", consumes = "application/json")
@@ -15,20 +18,19 @@ public interface AuthApiClient {
         @JsonProperty("Token")
         private String token;
 
-        public AuthRequest(String token) {
-            this.token = token;
-        }
-        
+        public AuthRequest(String token) { this.token = token; }
+
         public String getToken() { return token; }
         public void setToken(String token) { this.token = token; }
     }
+
     class AuthResponse {
         @JsonProperty("error")
         private boolean error;
 
         @JsonProperty("AccessToken")
         private String accessToken;
-        
+
         public boolean isError() { return error; }
         public String getAccessToken() { return accessToken; }
     }

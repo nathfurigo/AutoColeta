@@ -1,11 +1,11 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.config;
 
-import com.tecnolog.autocoleta.config.SalvarColetaFeignConfig; // Importe a classe de configuração
-import com.tecnolog.autocoleta.dto.SalvaColetaModel;
-import com.tecnolog.autocoleta.dto.SalvarColetaResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvarColetaResponse;
 
 @FeignClient(name = "salvarColeta", configuration = SalvarColetaFeignConfig.class)
 public interface SalvarColetaFeign {

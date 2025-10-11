@@ -1,7 +1,8 @@
 package com.tecnolog.autocoleta.dtm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tecnolog.autocoleta.dto.SalvaColetaModel;
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

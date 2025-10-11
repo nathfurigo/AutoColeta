@@ -1,5 +1,6 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.config;
 
+import com.tecnolog.autocoleta.dto.AddOcorrenciaRequest;
 import com.tecnolog.autocoleta.dto.SyncLogOcorrenciaResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;

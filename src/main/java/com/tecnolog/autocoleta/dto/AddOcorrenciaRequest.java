@@ -1,4 +1,4 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;

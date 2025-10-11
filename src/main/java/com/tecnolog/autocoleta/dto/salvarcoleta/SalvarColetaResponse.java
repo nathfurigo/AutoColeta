@@ -1,4 +1,4 @@
-package com.tecnolog.autocoleta.dto;
+package com.tecnolog.autocoleta.dto.salvarcoleta;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,11 +1,10 @@
-package com.tecnolog.autocoleta.dto;
+package com.tecnolog.autocoleta.dto.salvarcoleta;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.util.List;
-import com.tecnolog.autocoleta.salvarcoleta.payload.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {

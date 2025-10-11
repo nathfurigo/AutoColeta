@@ -1,8 +1,7 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.config;
 
-import com.tecnolog.autocoleta.dto.SalvaColetaModel;
-import com.tecnolog.autocoleta.dto.SalvarColetaResponse;
-
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvarColetaResponse;
 
 public interface SalvarColetaClient {
     

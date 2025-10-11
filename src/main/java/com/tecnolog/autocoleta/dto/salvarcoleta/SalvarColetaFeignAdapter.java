@@ -1,8 +1,11 @@
-package com.tecnolog.autocoleta.salvarcoleta;
+package com.tecnolog.autocoleta.dto.salvarcoleta;
 
+import com.tecnolog.autocoleta.config.AdicionarOcorrenciaFeign;
 import com.tecnolog.autocoleta.config.AppProperties;
-import com.tecnolog.autocoleta.dto.SalvaColetaModel;
-import com.tecnolog.autocoleta.dto.SalvarColetaResponse;
+import com.tecnolog.autocoleta.config.AuthApiClient;
+import com.tecnolog.autocoleta.config.SalvarColetaClient;
+import com.tecnolog.autocoleta.config.SalvarColetaFeign;
+import com.tecnolog.autocoleta.dto.AddOcorrenciaRequest;
 import com.tecnolog.autocoleta.dto.SyncLogOcorrenciaResponse;
 import org.springframework.stereotype.Component;
 import java.time.OffsetDateTime;

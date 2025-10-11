@@ -10,13 +10,16 @@ public class AppProperties {
     private final SalvarOcorrencia salvarOcorrencia = new SalvarOcorrencia();
     private final Defaults defaults = new Defaults();
     private final Scheduler scheduler = new Scheduler();
+    private final CarregarColeta carregarColeta = new CarregarColeta();
 
     public Dtm getDtm() { return dtm; }
     public SalvarColeta getSalvarColeta() { return salvarColeta; }
     public SalvarOcorrencia getSalvarOcorrencia() { return salvarOcorrencia; }
     public Defaults getDefaults() { return defaults; }
     public Scheduler getScheduler() { return scheduler; }
+    public CarregarColeta getCarregarColeta() { return carregarColeta; }
 
+    // ... (outras classes internas como Scheduler, Dtm, etc. permanecem as mesmas) ...
     public static class Scheduler {
         private int batchSize;
         public int getBatchSize() { return batchSize; }
@@ -87,5 +90,20 @@ public class AppProperties {
         public void setHrInicio(String hrInicio) { this.hrInicio = hrInicio; }
         public String getHrFim() { return hrFim; }
         public void setHrFim(String hrFim) { this.hrFim = hrFim; }
+    }
+
+
+    // Classe interna CarregarColeta corrigida
+    public static class CarregarColeta {
+        private String baseUrl;
+        private String username;
+        private String password;
+
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 }

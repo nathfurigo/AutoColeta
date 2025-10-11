@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,7 @@ public class DtmAutomationService {
         this.processingService = processingService;
     }
 
-    @Transactional
+    @Transactional // Usará o bean "transactionManager" por convenção
     public Map<String, Integer> processBatch(int limit) {
         List<DtmPendingRow> pendentes = dtmRepository.buscarPendentesOrdenado(limit);
         if (pendentes == null || pendentes.isEmpty()) {
@@ -40,6 +39,7 @@ public class DtmAutomationService {
         int failureCount = 0;
 
         for (DtmPendingRow row : pendentes) {
+            // Tenta obter o lock para o DTM. Se falhar, outro processo já o pegou.
             if (!lockRepository.tryLock(row.getIdDtm())) {
                 continue;
             }
@@ -48,6 +48,8 @@ public class DtmAutomationService {
                 processingService.processarDtm(row);
                 successCount++;
             } catch (Exception e) {
+                // A exceção já foi tratada e logada em DtmProcessingService.
+                // Aqui apenas contamos a falha para o resumo do lote.
                 log.warn("Falha ao processar DTM {} no lote. Causa: {}", row.getIdDtm(), e.getMessage());
                 failureCount++;
             }

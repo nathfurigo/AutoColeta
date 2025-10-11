@@ -1,12 +1,46 @@
+# ===================================================================
+# ARQUIVO DE CONFIGURAÇÃO PARA O AMBIENTE DE PRODUÇÃO (prod)
+# ===================================================================
+
 spring:
+  
   datasource:
     url: "jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg"
     username: "postgres"
-    password: "BRU*980192@no"
+    password: "BRU*980122@no"
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 100
-      max-lifetime: 1200000
-      keepalive-time: 300000
-      idle-timeout: 600000
-      connection-timeout: 30000
+      pool-name: PrimaryHikariPool
+      maximum-pool-size: 20
+
+    # 2. Propriedades do SQL Server (Banco Secundário)
+    # Este prefixo corresponde ao @ConfigurationProperties("spring.datasource.sqlserver")
+    sqlserver:
+      url: "jdbc:sqlserver://localhost:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;"
+      username: "sa"
+      password: "esl@13509"
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+        pool-name: SqlServerHikariPool
+        maximum-pool-size: 20
+
+# ---------------- CONFIGURAÇÕES DA APLICAÇÃO ----------------
+app:
+  scheduler:
+    fixed-delay-ms: 15000
+    batch-size: 100
+  dtm:
+    view: "public.vw_dtm_pedidocoleta_unica"
+    lock-table: "public.dtm_automation_lock"
+  salvarColeta:
+    baseUrl: "https://Hmg-beta.synclog.com.br"
+    tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
+    timeout-seconds: 30
+  salvarOcorrencia:
+    baseUrl: "https://dev.synclog.com.br"
+    system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
+  defaults:
+    hr-inicio: "00:00"
+    hr-fim: "23:59"
+    modal: RODOVIARIO
+

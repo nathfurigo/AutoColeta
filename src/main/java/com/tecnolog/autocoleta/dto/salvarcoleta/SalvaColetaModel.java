@@ -9,48 +9,62 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {
 
-    @JsonProperty("idDtm")               private Long idDtm;
-    @JsonProperty("TokenHash")           private String tokenHash;
-    @JsonProperty("idPedidoColeta")      private Integer idPedidoColeta;
-    @JsonProperty("idRemetente")         private Integer idRemetente;
-    @JsonProperty("idDestinatario")      private Integer idDestinatario;
-    @JsonProperty("idTomador")           private Integer idTomador;
-    @JsonProperty("idFilialResposavel")  private Integer idFilialResposavel;
-    @JsonProperty("idLocalColeta")       private Integer idLocalColeta;
+    @JsonProperty("idDtm")              private Long idDtm;
+    @JsonProperty("TokenHash")          private String tokenHash;
+    @JsonProperty("idPedidoColeta")     private Integer idPedidoColeta;
+
+    // IDs que serão preenchidos pelo Repository
+    @JsonProperty("idRemetente")        private Integer idRemetente;
+    @JsonProperty("idDestinatario")     private Integer idDestinatario;
+    @JsonProperty("idTomador")          private Integer idTomador;
+    @JsonProperty("idFilialResposavel") private Integer idFilialResposavel;
+    @JsonProperty("idLocalColeta")      private Integer idLocalColeta;
+    
+    // --- CAMPOS PARA BUSCA DINÂMICA DE PESSOAS ---
+    @JsonProperty("dsRemetente")        private String dsRemetente;
+    @JsonProperty("cdRemetenteCnpj")    private String cdRemetenteCnpj;
+    @JsonProperty("dsDestinatario")     private String dsDestinatario;
+    @JsonProperty("cdDestinatarioCnpj") private String cdDestinatarioCnpj;
+    @JsonProperty("dsTomador")          private String dsTomador;
+    @JsonProperty("cdTomadorCnpj")      private String cdTomadorCnpj;
+    // --- FIM DOS CAMPOS DE BUSCA ---
 
     @JsonProperty("dtColeta")   @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtColeta;
 
-    @JsonProperty("hrColetaInicio")      private String hrColetaInicio;
-    @JsonProperty("hrColetaFim")         private String hrColetaFim;
+    @JsonProperty("hrColetaInicio")     private String hrColetaInicio;
+    @JsonProperty("hrColetaFim")        private String hrColetaFim;
 
     @JsonProperty("dtEntrega")  @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtEntrega;
 
-    @JsonProperty("tpModal")             private Integer tpModal;
-    @JsonProperty("dsEndereco")          private String dsEndereco;
-    @JsonProperty("nrEnderecoNR")        private String nrEnderecoNR;
-    @JsonProperty("dsEnderecoBairro")    private String dsEnderecoBairro;
-    @JsonProperty("dsEnderecoComplento") private String dsEnderecoComplento;
-    @JsonProperty("cdEnderecoCEP")       private String cdEnderecoCEP;
-    @JsonProperty("idEnderecoCidade")    private Integer idEnderecoCidade;
+    @JsonProperty("tpModal")            private Integer tpModal;
+    @JsonProperty("dsEndereco")         private String dsEndereco;
+    @JsonProperty("nrEnderecoNR")       private String nrEnderecoNR;
+    @JsonProperty("dsEnderecoBairro")   private String dsEnderecoBairro;
+    @JsonProperty("dsEnderecoComplento")private String dsEnderecoComplento;
+    @JsonProperty("cdEnderecoCEP")      private String cdEnderecoCEP;
+    @JsonProperty("idEnderecoCidade")   private Integer idEnderecoCidade;
 
-    @JsonProperty("dsSolicitante")      private String dsSolicitante;
+    @JsonProperty("dsSolicitante")      private String dsSolicitante; // Email do solicitante
+    @JsonProperty("dsSolicitanteNome")  private String dsSolicitanteNome; // <<-- CAMPO ADICIONADO
     @JsonProperty("dsProcurarPor")      private String dsProcurarPor;
     @JsonProperty("nrTelefone")         private String nrTelefone;
 
+    // IDs que serão preenchidos pelo Repository
     @JsonProperty("idTipoColeta")       private Integer idTipoColeta;
     @JsonProperty("idAgente")           private Integer idAgente;
     @JsonProperty("idEmbalagem")        private Integer idEmbalagem;
     @JsonProperty("idNaturezaCarga")    private Integer idNaturezaCarga;
 
-    // --- CAMPOS ADICIONADOS ---
-    @JsonProperty("dsAgente")           private String dsAgente;
+    // --- CAMPOS DESCRITIVOS PARA BUSCA DOS IDs ---
+    @JsonProperty("dsAgente")           private String dsAgenteNome; // <<-- @JsonProperty CORRIGIDO
+    @JsonProperty("dsAgenteEmail")      private String dsAgenteEmail;
     @JsonProperty("dsTipoColeta")       private String dsTipoColeta;
     @JsonProperty("dsEmbalagem")        private String dsEmbalagem;
     @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga;
-    // --- FIM DOS CAMPOS ADICIONADOS ---
-
+    // --- FIM DOS CAMPOS DESCRITIVOS ---
+    
     @JsonProperty("nrReferencia")       private String nrReferencia;
     @JsonProperty("nrPedidoCliente")    private String nrPedidoCliente;
 
@@ -60,7 +74,7 @@ public class SalvaColetaModel {
 
     @JsonProperty("dsComentarios")      private String dsComentarios;
 
-    // Getters e Setters existentes (sem alterações)
+    // Getters e Setters
     public Long getIdDtm() { return idDtm; }
     public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
     public String getTokenHash() { return tokenHash; }
@@ -77,6 +91,18 @@ public class SalvaColetaModel {
     public void setIdFilialResposavel(Integer idFilialResposavel) { this.idFilialResposavel = idFilialResposavel; }
     public Integer getIdLocalColeta() { return idLocalColeta; }
     public void setIdLocalColeta(Integer idLocalColeta) { this.idLocalColeta = idLocalColeta; }
+    public String getDsRemetente() { return dsRemetente; }
+    public void setDsRemetente(String dsRemetente) { this.dsRemetente = dsRemetente; }
+    public String getCdRemetenteCnpj() { return cdRemetenteCnpj; }
+    public void setCdRemetenteCnpj(String cdRemetenteCnpj) { this.cdRemetenteCnpj = cdRemetenteCnpj; }
+    public String getDsDestinatario() { return dsDestinatario; }
+    public void setDsDestinatario(String dsDestinatario) { this.dsDestinatario = dsDestinatario; }
+    public String getCdDestinatarioCnpj() { return cdDestinatarioCnpj; }
+    public void setCdDestinatarioCnpj(String cdDestinatarioCnpj) { this.cdDestinatarioCnpj = cdDestinatarioCnpj; }
+    public String getDsTomador() { return dsTomador; }
+    public void setDsTomador(String dsTomador) { this.dsTomador = dsTomador; }
+    public String getCdTomadorCnpj() { return cdTomadorCnpj; }
+    public void setCdTomadorCnpj(String cdTomadorCnpj) { this.cdTomadorCnpj = cdTomadorCnpj; }
     public LocalDate getDtColeta() { return dtColeta; }
     public void setDtColeta(LocalDate dtColeta) { this.dtColeta = dtColeta; }
     public String getHrColetaInicio() { return hrColetaInicio; }
@@ -113,6 +139,12 @@ public class SalvaColetaModel {
     public void setIdEmbalagem(Integer idEmbalagem) { this.idEmbalagem = idEmbalagem; }
     public Integer getIdNaturezaCarga() { return idNaturezaCarga; }
     public void setIdNaturezaCarga(Integer idNaturezaCarga) { this.idNaturezaCarga = idNaturezaCarga; }
+    public String getDsTipoColeta() { return dsTipoColeta; }
+    public void setDsTipoColeta(String dsTipoColeta) { this.dsTipoColeta = dsTipoColeta; }
+    public String getDsEmbalagem() { return dsEmbalagem; }
+    public void setDsEmbalagem(String dsEmbalagem) { this.dsEmbalagem = dsEmbalagem; }
+    public String getDsNaturezaCarga() { return dsNaturezaCarga; }
+    public void setDsNaturezaCarga(String dsNaturezaCarga) { this.dsNaturezaCarga = dsNaturezaCarga; }
     public String getNrReferencia() { return nrReferencia; }
     public void setNrReferencia(String nrReferencia) { this.nrReferencia = nrReferencia; }
     public String getNrPedidoCliente() { return nrPedidoCliente; }
@@ -125,15 +157,10 @@ public class SalvaColetaModel {
     public void setMonitoramento(List<SalvaColetaMonitoramentoModel> monitoramento) { this.monitoramento = monitoramento; }
     public String getDsComentarios() { return dsComentarios; }
     public void setDsComentarios(String dsComentarios) { this.dsComentarios = dsComentarios; }
-
-    // --- GETTERS E SETTERS ADICIONADOS ---
-    public String getDsAgente() { return dsAgente; }
-    public void setDsAgente(String dsAgente) { this.dsAgente = dsAgente; }
-    public String getDsTipoColeta() { return dsTipoColeta; }
-    public void setDsTipoColeta(String dsTipoColeta) { this.dsTipoColeta = dsTipoColeta; }
-    public String getDsEmbalagem() { return dsEmbalagem; }
-    public void setDsEmbalagem(String dsEmbalagem) { this.dsEmbalagem = dsEmbalagem; }
-    public String getDsNaturezaCarga() { return dsNaturezaCarga; }
-    public void setDsNaturezaCarga(String dsNaturezaCarga) { this.dsNaturezaCarga = dsNaturezaCarga; }
-    // --- FIM DOS GETTERS E SETTERS ADICIONADOS ---
+    public String getDsAgenteNome() { return dsAgenteNome; }
+    public void setDsAgenteNome(String dsAgenteNome) { this.dsAgenteNome = dsAgenteNome; }
+    public String getDsAgenteEmail() { return dsAgenteEmail; }
+    public void setDsAgenteEmail(String dsAgenteEmail) { this.dsAgenteEmail = dsAgenteEmail; }
+    public String getDsSolicitanteNome() { return dsSolicitanteNome; } // <<-- GETTER/SETTER ADICIONADO
+    public void setDsSolicitanteNome(String dsSolicitanteNome) { this.dsSolicitanteNome = dsSolicitanteNome; }
 }

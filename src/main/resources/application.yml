@@ -19,19 +19,19 @@ spring:
         config:
           default:
             connectTimeout: 15000
-            readTimeout: 60000
+            readTimeout: 120000
             loggerLevel: full
           salvarColeta:
             connectTimeout: 15000
-            readTimeout: 60000
+            readTimeout: 120000
             loggerLevel: full
           adicionarOcorrencia:
             connectTimeout: 15000
-            readTimeout: 60000
+            readTimeout: 120000
             loggerLevel: full
           authApi:
             connectTimeout: 15000
-            readTimeout: 60000
+            readTimeout: 120000
             loggerLevel: full
 
 logging:
@@ -43,7 +43,7 @@ logging:
 # ---------------- CONFIGURAÇÕES DA APLICAÇÃO (COMUM) ----------------
 app:
   scheduler:
-    batch-size: 100            # <-- mapeia para AppProperties.Scheduler.batchSize
+    batch-size: 10            # <-- mapeia para AppProperties.Scheduler.batchSize
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"

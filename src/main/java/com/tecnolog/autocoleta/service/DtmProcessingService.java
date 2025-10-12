@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class DtmProcessingService {
 
@@ -64,6 +67,23 @@ public class DtmProcessingService {
             // Passo de ENRIQUECIMENTO: Busca dados faltantes no SQL Server e preenche o objeto
             sqlServerRepository.preencherDadosFaltantes(requestPayload);
             
+            // --- AJUSTE: VALIDAÇÃO "FAIL-FAST" ---
+            // Verifica se os IDs obrigatórios foram encontrados antes de prosseguir.
+            List<String> missingFields = new ArrayList<>();
+            if (requestPayload.getIdRemetente() == null) missingFields.add("idRemetente");
+            if (requestPayload.getIdDestinatario() == null) missingFields.add("idDestinatario");
+            if (requestPayload.getIdTomador() == null) missingFields.add("idTomador");
+            if (requestPayload.getIdAgente() == null) missingFields.add("idAgente");
+            if (requestPayload.getIdLocalColeta() == null) missingFields.add("idLocalColeta");
+            if (requestPayload.getIdNaturezaCarga() == null) missingFields.add("idNaturezaCarga");
+            if (requestPayload.getIdEmbalagem() == null) missingFields.add("idEmbalagem");
+            // Adicione outros IDs obrigatórios se necessário (ex: idFilialResposavel, idEnderecoCidade)
+
+            if (!missingFields.isEmpty()) {
+                throw new IllegalStateException("Falha de enriquecimento de dados. IDs ausentes: " + String.join(", ", missingFields));
+            }
+            // --- FIM DO AJUSTE ---
+
             log.debug("Payload final para API SalvarColeta (DTM {}): {}", idDtm, safeJson(requestPayload));
 
             // Pré-verificação de conectividade e autenticação com a API de ocorrências

@@ -40,21 +40,25 @@ logging:
     com.tecnolog.autocoleta: DEBUG
     feign: DEBUG
 
-# ---------------- CONFIGURAÇÕES DA APLICAÇÃO (COMUM) ----------------
 app:
   scheduler:
-    batch-size: 10            # <-- mapeia para AppProperties.Scheduler.batchSize
+    batch-size: 100            
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"
   salvarColeta:
+  #Homologação
     baseUrl: "https://Hmg-beta.synclog.com.br"
+  #Produção
+#    baseUrl: "https://beta.synclog.com.br"
     tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
     timeout-seconds: 30
   salvarOcorrencia:
+  #Homologação
     baseUrl: "https://dev.synclog.com.br"
+  #Produção
+#    baseUrl: "https://synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
-    hr-inicio: "00:00"         # relaxed binding -> hrInicio
-    hr-fim: "23:59"            # relaxed binding -> hrFim
-    modal: RODOVIARIO          # enum em AppProperties.Defaults.Modal
+    hr-inicio: "00:00"         
+    hr-fim: "23:59"            

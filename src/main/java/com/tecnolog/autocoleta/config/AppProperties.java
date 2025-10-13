@@ -19,7 +19,6 @@ public class AppProperties {
     public Scheduler getScheduler() { return scheduler; }
     public CarregarColeta getCarregarColeta() { return carregarColeta; }
 
-    // ... (outras classes internas como Scheduler, Dtm, etc. permanecem as mesmas) ...
     public static class Scheduler {
         private int batchSize;
         public int getBatchSize() { return batchSize; }
@@ -92,8 +91,6 @@ public class AppProperties {
         public void setHrFim(String hrFim) { this.hrFim = hrFim; }
     }
 
-
-    // Classe interna CarregarColeta corrigida
     public static class CarregarColeta {
         private String baseUrl;
         private String username;

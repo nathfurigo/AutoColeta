@@ -69,7 +69,7 @@ public class DtmLockRepository {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    @Transactional("transactionManager") // Especifica o transaction manager do postgres
+    @Transactional("transactionManager")
     public boolean tryLock(long idDtm) {
         String upsertSql = "INSERT INTO " + lockTable + " (id_dtm) VALUES (?) ON CONFLICT (id_dtm) DO NOTHING";
         jdbc.update(upsertSql, idDtm);

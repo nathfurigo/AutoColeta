@@ -47,8 +47,6 @@ public class DtmAutomationService {
                 processingService.processarDtm(row);
                 successCount++;
             } catch (Exception e) {
-                // A exceção já foi tratada e logada em DtmProcessingService.
-                // Aqui apenas contamos a falha para o resumo do lote.
                 log.warn("Falha ao processar DTM {} no lote. Causa: {}", row.getIdDtm(), e.getMessage());
                 failureCount++;
             }

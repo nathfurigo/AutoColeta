@@ -13,10 +13,9 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 @Configuration
 public class DataSourceConfig {
 
-  // ---- POSTGRES (PRIMÁRIO) ----
   @Primary
   @Bean(name = "postgresDataSource")
-  @ConfigurationProperties(prefix = "spring.datasource")  // <<-- usa spring.datasource.*
+  @ConfigurationProperties(prefix = "spring.datasource")
   public DataSource postgresDataSource() {
     return DataSourceBuilder.create().build();
   }
@@ -33,7 +32,6 @@ public class DataSourceConfig {
     return new DataSourceTransactionManager(ds);
   }
 
-  // ---- SQL SERVER (SECUNDÁRIO) ----
   @Bean(name = "sqlServerDataSource")
   @ConfigurationProperties(prefix = "spring.datasource.sqlserver")
   public DataSource sqlServerDataSource() {

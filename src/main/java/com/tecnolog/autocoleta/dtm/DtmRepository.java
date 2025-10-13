@@ -19,13 +19,6 @@ public class DtmRepository {
         this.lockTable = props.getDtm().getLockTable();
     }
 
-    /**
-     * Busca DTMs pendentes diretamente da view, que contém a lógica de priorização
-     * e agendamento. As DTMs que já possuem coleta gerada mas falharam no passo
-     * de registrar a ocorrência são priorizadas.
-     * @param limit A quantidade máxima de registros a serem retornados.
-     * @return Uma lista de DTMs pendentes, ordenadas por prioridade.
-     */
     public List<DtmPendingRow> buscarPendentesOrdenado(int limit) {
         String sql =
             "SELECT v.\"DTM\" AS id_dtm, " +
@@ -34,16 +27,11 @@ public class DtmRepository {
             "  FROM " + dtmView + " v " +
             "  LEFT JOIN " + lockTable + " l " +
             "    ON l.id_dtm = v.\"DTM\" " +
-            // Condição 1: DTMs nunca tocadas (sem lock, sem processamento)
             " WHERE (l.id_dtm IS NULL) " +
-            // Condição 2: DTMs que falharam, mas não criticamente (sem coleta gerada)
             "    OR (COALESCE(l.processed, false) = false AND l.coleta_gerada IS NULL)" +
-            // Condição 3: DTMs que geraram coleta mas falharam ao registrar ocorrência (CRÍTICO - REPROCESSAR PRIMEIRO)
             "    OR (l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = false) " +
-            // A view já exclui DTMs processadas, mas garantimos que não estão em processamento.
             "   AND COALESCE(l.processing, false) = false" +
             " ORDER BY " +
-            // Prioridade máxima para DTMs que precisam registrar ocorrência
             "          CASE WHEN l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = FALSE THEN 0 ELSE v.prioridade_ordem END NULLS LAST, " +
             "          v.\"Hora Coleta\" ASC, " +
             "          v.\"DTM\" ASC " +

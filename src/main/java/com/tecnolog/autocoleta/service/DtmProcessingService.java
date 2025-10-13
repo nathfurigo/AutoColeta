@@ -2,20 +2,26 @@ package com.tecnolog.autocoleta.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tecnolog.autocoleta.config.AppProperties;
+import com.tecnolog.autocoleta.config.AuthApiClient;
 import com.tecnolog.autocoleta.config.SalvarColetaClient;
 import com.tecnolog.autocoleta.dtm.DtmLockRepository;
-import com.tecnolog.autocoleta.dtm.DtmLockStatus;
 import com.tecnolog.autocoleta.dtm.DtmPendingRow;
 import com.tecnolog.autocoleta.dtm.DtmToSalvaColetaMapper;
 import com.tecnolog.autocoleta.dtm.SqlServerRepository;
+import com.tecnolog.autocoleta.dto.AddOcorrenciaRequest;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvarColetaResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.tecnolog.autocoleta.config.AdicionarOcorrenciaFeign;
 
 @Service
 public class DtmProcessingService {
@@ -27,73 +33,62 @@ public class DtmProcessingService {
     private final DtmLockRepository dtmLockRepository;
     private final ObjectMapper objectMapper;
     private final SqlServerRepository sqlServerRepository;
+    private final AdicionarOcorrenciaFeign adicionarOcorrenciaFeign;
+    private final AuthApiClient authApiClient;
+    private final AppProperties appProperties;
+
+    private static final int ID_OCORRENCIA_PROCESSADO = 2;
 
     public DtmProcessingService(
             SalvarColetaClient salvarColetaClient,
             DtmToSalvaColetaMapper dtmMapper,
             DtmLockRepository dtmLockRepository,
             ObjectMapper objectMapper,
-            SqlServerRepository sqlServerRepository
+            SqlServerRepository sqlServerRepository,
+            AdicionarOcorrenciaFeign adicionarOcorrenciaFeign,
+            AuthApiClient authApiClient,
+            AppProperties appProperties
     ) {
         this.salvarColetaClient = salvarColetaClient;
         this.dtmMapper = dtmMapper;
         this.dtmLockRepository = dtmLockRepository;
         this.objectMapper = objectMapper;
         this.sqlServerRepository = sqlServerRepository;
+        this.adicionarOcorrenciaFeign = adicionarOcorrenciaFeign;
+        this.authApiClient = authApiClient;
+        this.appProperties = appProperties;
     }
 
     public void processarDtm(DtmPendingRow dtmRow) {
         long idDtm = dtmRow.getIdDtm();
-        String numeroColetaGerada = null;
-        
-        DtmLockStatus initialLockStatus = dtmLockRepository.getLockStatus(idDtm);
 
         try {
-            // Cenário de Reprocessamento: A coleta foi gerada, mas a ocorrência falhou.
-            if (initialLockStatus != null && initialLockStatus.getColetaGerada() != null && !initialLockStatus.isProcessed()) {
-                numeroColetaGerada = initialLockStatus.getColetaGerada();
-                log.warn("DTM {} já tem coleta {} gerada, mas status está pendente. Tentando registrar ocorrência novamente...", idDtm, numeroColetaGerada);
+            Integer existingColetaId = sqlServerRepository.findExistingColetaIdByDtm(String.valueOf(idDtm));
 
-                salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada); 
-                
-                dtmLockRepository.markProcessed(idDtm, numeroColetaGerada);
-                log.info("DTM {} - Ocorrência para coleta {} registrada com sucesso (Repro.).", idDtm, numeroColetaGerada);
-                return;
+            if (existingColetaId != null) {
+                log.warn("DTM {} já possui uma coleta vinculada (ID: {}). A criação de uma nova coleta foi cancelada.", idDtm, existingColetaId);
+                adicionarOcorrencia(idDtm, "Coleta já vinculada no TMS com o ID: " + existingColetaId);
+                dtmLockRepository.markProcessed(idDtm, existingColetaId.toString());
+                return; 
             }
-            
-            // Mapeia o JSON da view para o objeto de requisição
-            SalvaColetaModel requestPayload = dtmMapper.map(dtmRow);
 
-            // Passo de ENRIQUECIMENTO: Busca dados faltantes no SQL Server e preenche o objeto
+            log.info("Nenhuma coleta existente para DTM {}. Prosseguindo com a criação.", idDtm);
+            SalvaColetaModel requestPayload = dtmMapper.map(dtmRow);
+            
             sqlServerRepository.preencherDadosFaltantes(requestPayload);
             
-            // --- AJUSTE: VALIDAÇÃO "FAIL-FAST" ---
-            // Verifica se os IDs obrigatórios foram encontrados antes de prosseguir.
             List<String> missingFields = new ArrayList<>();
             if (requestPayload.getIdRemetente() == null) missingFields.add("idRemetente");
             if (requestPayload.getIdDestinatario() == null) missingFields.add("idDestinatario");
             if (requestPayload.getIdTomador() == null) missingFields.add("idTomador");
-            if (requestPayload.getIdAgente() == null) missingFields.add("idAgente");
             if (requestPayload.getIdLocalColeta() == null) missingFields.add("idLocalColeta");
             if (requestPayload.getIdNaturezaCarga() == null) missingFields.add("idNaturezaCarga");
             if (requestPayload.getIdEmbalagem() == null) missingFields.add("idEmbalagem");
-            // Adicione outros IDs obrigatórios se necessário (ex: idFilialResposavel, idEnderecoCidade)
-
+            
             if (!missingFields.isEmpty()) {
                 throw new IllegalStateException("Falha de enriquecimento de dados. IDs ausentes: " + String.join(", ", missingFields));
             }
-            // --- FIM DO AJUSTE ---
 
-            log.debug("Payload final para API SalvarColeta (DTM {}): {}", idDtm, safeJson(requestPayload));
-
-            // Pré-verificação de conectividade e autenticação com a API de ocorrências
-            try {
-                salvarColetaClient.tryAdicionarOcorrenciaTokenOnly(idDtm);
-            } catch (RuntimeException e) {
-                throw new RuntimeException("Pré-requisito falhou: Não foi possível obter AccessToken para DTM " + idDtm + ". Coleta não será gerada.", e);
-            }
-            
-            // Envia a requisição para criar a coleta
             SalvarColetaResponse response = salvarColetaClient.salvar(requestPayload);
             log.info("Resposta da API SalvarColeta para DTM {}: erro={}, response='{}'", idDtm, response.isErro(), response.getResponse());
 
@@ -101,26 +96,43 @@ public class DtmProcessingService {
                 throw new IllegalStateException("API SalvarColeta retornou erro: " + (response != null ? response.getResponse() : "Resposta nula"));
             }
 
-            // Se a coleta foi criada com sucesso, registra a ocorrência
-            numeroColetaGerada = response.getResponse();
-            log.info("DTM {} - Coleta {} gerada com sucesso. Tentando registrar ocorrência...", idDtm, numeroColetaGerada);
-
-            salvarColetaClient.adicionarOcorrencia(idDtm, numeroColetaGerada); 
+            String numeroColetaGerada = response.getResponse();
+            log.info("DTM {} - Coleta {} gerada com sucesso. Registrando ocorrência...", idDtm, numeroColetaGerada);
+            adicionarOcorrencia(idDtm, "Coleta Nº - " + numeroColetaGerada);
             dtmLockRepository.markProcessed(idDtm, numeroColetaGerada);
-            log.info("DTM {} - Ocorrência para coleta {} registrada com sucesso.", idDtm, numeroColetaGerada);
+            log.info("Ocorrência para DTM {} (Coleta {}) registrada com sucesso.", idDtm, numeroColetaGerada);
 
         } catch (Exception e) {
-            String errorMessage;
-            if (numeroColetaGerada != null) {
-                errorMessage = String.format("CRÍTICO: Coleta %s foi criada para a DTM %d, mas o registro da ocorrência final falhou. Causa: %s",
-                        numeroColetaGerada, idDtm, e.getMessage());
-            } else {
-                errorMessage = "Falha ao processar DTM " + idDtm + ". Coleta não foi gerada. Causa: " + e.getMessage();
-            }
-
-            log.error(errorMessage, e); // Adicionado 'e' para logar o stack trace
-            dtmLockRepository.markError(idDtm, errorMessage); 
+            String errorMessage = "Falha ao processar DTM " + idDtm + ". Causa: " + e.getMessage();
+            log.error(errorMessage);
+            dtmLockRepository.markError(idDtm, errorMessage);
             throw new RuntimeException(errorMessage, e);
+        }
+    }
+    
+    private void adicionarOcorrencia(long dtmId, String observacoes) {
+        try {
+            String systemToken = appProperties.getSalvarOcorrencia().getSystemToken();
+            AuthApiClient.AuthRequest authRequest = new AuthApiClient.AuthRequest(systemToken);
+            AuthApiClient.AuthResponse authResponse = authApiClient.getAccessToken(authRequest);
+
+            if (authResponse == null || authResponse.isError() || authResponse.getAccessToken() == null) {
+                throw new RuntimeException("Falha ao obter AccessToken para a API de Ocorrência.");
+            }
+            String accessToken = authResponse.getAccessToken();
+            log.debug("AccessToken para DTM {} obtido com sucesso.", dtmId);
+
+            AddOcorrenciaRequest requestBody = new AddOcorrenciaRequest();
+            requestBody.setIdDtm(dtmId);
+            requestBody.setIdOcorrencia(ID_OCORRENCIA_PROCESSADO);
+            requestBody.setDsObservacoes(observacoes);
+            requestBody.setDtOcorrencia(OffsetDateTime.now());
+            requestBody.setAccessToken(accessToken);
+
+            this.adicionarOcorrenciaFeign.adicionarOcorrencia(requestBody);
+
+        } catch (Exception e) {
+            log.error("Falha ao enviar ocorrência via Feign para a DTM {}. Causa: {}", dtmId, e.getMessage());
         }
     }
 

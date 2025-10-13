@@ -10,7 +10,7 @@ import com.tecnolog.autocoleta.dto.salvarcoleta.SalvarColetaResponse;
 
 @FeignClient(
     name = "salvarColeta",
-    url = "${app.salvarColeta.baseUrl}",          // <<-- URL fixa via propriedade
+    url = "${app.salvarColeta.baseUrl}",
     configuration = SalvarColetaFeignConfig.class
 )
 public interface SalvarColetaFeign {

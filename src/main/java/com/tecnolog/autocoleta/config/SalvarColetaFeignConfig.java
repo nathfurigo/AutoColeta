@@ -1,7 +1,7 @@
 package com.tecnolog.autocoleta.config;
 
 import org.springframework.context.annotation.Bean;
-import com.tecnolog.autocoleta.config.AppProperties; // Importe a classe de propriedades
+import com.tecnolog.autocoleta.config.AppProperties;
 import feign.RequestInterceptor;
 
 public class SalvarColetaFeignConfig {

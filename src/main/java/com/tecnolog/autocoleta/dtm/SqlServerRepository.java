@@ -26,48 +26,82 @@ public class SqlServerRepository {
     private static final Map<String, String> NATUREZA_KEYWORD_MAP;
     static {
         NATUREZA_KEYWORD_MAP = new HashMap<>();
-        NATUREZA_KEYWORD_MAP.put("PARAF", "PEÇAS"); // Parafuso, PARAF.
-        NATUREZA_KEYWORD_MAP.put("TUBO", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("FLANGE", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("JUNTA", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("CONECTOR", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("VÁLVULA", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("LUVA", "PEÇAS");
-        NATUREZA_KEYWORD_MAP.put("CALÇA", "VESTUARIO");
-        NATUREZA_KEYWORD_MAP.put("MACACÃO", "VESTUARIO");
-        NATUREZA_KEYWORD_MAP.put("CAMISA", "VESTUARIO");
+        NATUREZA_KEYWORD_MAP.put("PARAF", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("TUBO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("FLANGE", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("JUNTA", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("CONECTOR", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("VÁLVULA", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("LUVA", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("PLUGUE", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("ELEMENTO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("PROTETOR", "EQUIPAMENTO DE SEGURANCA");
         NATUREZA_KEYWORD_MAP.put("TERMINAL", "MATERIAL ELETRICO");
         NATUREZA_KEYWORD_MAP.put("CABO", "MATERIAL ELETRICO");
+        //NATUREZA_KEYWORD_MAP.put("RELÉ", "MATERIAL ELETRICO");
+        NATUREZA_KEYWORD_MAP.put("RELÉ", "RELE");
+        NATUREZA_KEYWORD_MAP.put("CALÇA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("MACACÃO", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("CAMISA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("JOGO", "PECAS P/ MAQUINAS INDUSTRIAIS"); 
+
     }
 
     private static final Map<String, String> PESSOA_ALIAS_MAP;
-        static {
-            PESSOA_ALIAS_MAP = new HashMap<>();
-            // Mapeie "apelidos" que chegam na DTM para o nome exato como está no banco de destino
+    static {
+        PESSOA_ALIAS_MAP = new HashMap<>();
+        PESSOA_ALIAS_MAP.put("REGAP", "PETROLEO BRASILEIRO - REGAP - BETIM");
+        PESSOA_ALIAS_MAP.put("REPLAN", "PETROLEO BRASILEIRO SA - PAULINIA");
+        PESSOA_ALIAS_MAP.put("REDUC", "PETROLEO BRASILEIRO S.A - REDUC");
+        PESSOA_ALIAS_MAP.put("REVAP", "PETRO (REVAP)");
+        PESSOA_ALIAS_MAP.put("AEROPORTO GALEAO", "LIDER SIGNATURE S/A - GALEAO");
+        PESSOA_ALIAS_MAP.put("PETROBRAS CENPES - CENTRO 0054", "PETROLEO BRASILEIRO S/A - CENPES");
+        PESSOA_ALIAS_MAP.put("RPBC", "PETROLEO BRASILEIRO S.A - CUBATAO");
+        PESSOA_ALIAS_MAP.put("ARM-MACAE", "PETROLEO BRASILEIRO S/A - MACAE AGENDAMENTO");
+        PESSOA_ALIAS_MAP.put("UTE MARIO LAGO", "PETROLEO BRASILEIRO S.A - UTE LEONEL BRISOLA");
+        PESSOA_ALIAS_MAP.put("UTGC LINHARES", "PETROLEO BRASILEIRO - LINHARES");
+        PESSOA_ALIAS_MAP.put("UTE EUZÉBIO ROCHA", "PETROLEO BRASILEIRO S.A - CUBATAO");
 
-            // --- MAPEAMENTOS CORRIGIDOS COM BASE NA SUA PESQUISA ---
-            PESSOA_ALIAS_MAP.put("REGAP", "PETROLEO BRASILEIRO - REGAP - BETIM"); // ID 1052
-            PESSOA_ALIAS_MAP.put("REPLAN", "PETROLEO BRASILEIRO SA - PAULINIA"); // ID 1054
-            PESSOA_ALIAS_MAP.put("REDUC", "PETROLEO BRASILEIRO S.A - REDUC"); // ID 1066
-            PESSOA_ALIAS_MAP.put("REVAP", "PETRO (REVAP)"); // Nome a ser confirmado
-            PESSOA_ALIAS_MAP.put("AEROPORTO GALEAO", "LIDER SIGNATURE S/A - GALEAO"); // ID 40900
-            PESSOA_ALIAS_MAP.put("PETROBRAS CENPES - CENTRO 0054", "PETROLEO BRASILEIRO S/A - CENPES");
-        }
+    }
+
     public SqlServerRepository(@Qualifier("sqlServerJdbcTemplate") JdbcTemplate jdbc, AppProperties appProperties) {
         this.jdbc = jdbc;
         this.appProperties = appProperties;
+    }
+
+    public Integer findExistingColetaIdByDtm(String dtmId) {
+        if (dtmId == null || dtmId.isBlank()) {
+            return null;
+        }
+
+        String sql = """
+            SELECT TOP 1 pc.id_PedidoColeta
+            FROM tbdPedidoColeta pc
+            LEFT JOIN tbdItemPedidoColeta ipc ON pc.id_PedidoColeta = ipc.id_PedidoColeta
+            WHERE
+                ipc.nr_Referencia = ? OR
+                ipc.nr_PedidoCliente = ? OR
+                pc.cm_PedidoColeta LIKE ?
+        """;
+
+        try {
+            return jdbc.queryForObject(sql, Integer.class, dtmId, dtmId, "%" + dtmId + "%");
+        } catch (EmptyResultDataAccessException e) {
+            log.debug("Nenhuma coleta existente encontrada para a DTM {}", dtmId);
+            return null;
+        }
     }
 
     public void preencherDadosFaltantes(SalvaColetaModel model) {
         model.setIdRemetente(findPessoaId(model.getDsRemetente(), model.getCdRemetenteCnpj()));
         model.setIdDestinatario(findPessoaId(model.getDsDestinatario(), model.getCdDestinatarioCnpj()));
         model.setIdTomador(findPessoaId(model.getDsTomador(), model.getCdTomadorCnpj()));
-
         if (model.getIdLocalColeta() == null) {
             model.setIdLocalColeta(model.getIdRemetente());
         }
 
         model.setIdAgente(findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail()));
+
         model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem()));
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
@@ -98,17 +132,17 @@ public class SqlServerRepository {
         StringBuilder whereClause = new StringBuilder();
         List<Object> params = new ArrayList<>();
 
-        if (nome != null && !nome.isBlank()) {
-            whereClause.append("LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?");
-            params.add("%" + nome.toLowerCase() + "%");
-        }
-
         if (email != null && !email.isBlank()) {
+            whereClause.append("LOWER(p.cd_Email) = ?");
+            params.add(email.toLowerCase());
+        }
+        
+        if (nome != null && !nome.isBlank()) {
             if (!whereClause.isEmpty()) {
                 whereClause.append(" OR ");
             }
-            whereClause.append("LOWER(p.cd_Email) = ?");
-            params.add(email.toLowerCase());
+            whereClause.append("LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?");
+            params.add("%" + nome.toLowerCase() + "%");
         }
 
         if (params.isEmpty()) {
@@ -132,47 +166,38 @@ public class SqlServerRepository {
             return null;
         }
 
-        String nomeBusca = nome;
-        if (nomeBusca != null && PESSOA_ALIAS_MAP.containsKey(nomeBusca.toUpperCase())) {
-            String nomeTraduzido = PESSOA_ALIAS_MAP.get(nomeBusca.toUpperCase());
-            log.info("Apelido de Pessoa '{}' traduzido para busca como '{}'", nome, nomeTraduzido);
-            nomeBusca = nomeTraduzido;
-        }
-
-        String sqlBase = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE ";
-        StringBuilder whereClause = new StringBuilder();
-        List<Object> params = new ArrayList<>();
-
-        if (nomeBusca != null && !nomeBusca.isBlank()) {
-            whereClause.append("(LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)");
-            String termoBusca = "%" + nomeBusca.toLowerCase() + "%";
-            params.add(termoBusca);
-            params.add(termoBusca);
-        }
-
         if (cnpj != null && !cnpj.isBlank()) {
-            if (!whereClause.isEmpty()) {
-                whereClause.append(" OR ");
+            try {
+                String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
+                String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
+                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
+                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Tentando buscar pelo nome '{}'.", cnpj, nome);
             }
-            String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
-            whereClause.append("cd_CGCCPF = ?");
-            params.add(cleanCnpj);
         }
 
-        if (params.isEmpty()) {
-            return null;
+        if (nome != null && !nome.isBlank()) {
+            String nomeBusca = nome;
+            if (PESSOA_ALIAS_MAP.containsKey(nomeBusca.toUpperCase())) {
+                String nomeTraduzido = PESSOA_ALIAS_MAP.get(nomeBusca.toUpperCase());
+                log.info("Apelido de Pessoa '{}' traduzido para busca como '{}'", nome, nomeTraduzido);
+                nomeBusca = nomeTraduzido;
+            }
+
+            try {
+                String sqlNome = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE (LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)";
+                String termoBusca = "%" + nomeBusca.toLowerCase() + "%";
+                Integer id = jdbc.queryForObject(sqlNome, Integer.class, termoBusca, termoBusca);
+                log.info("ID de Pessoa encontrado via Nome: {} (para nome='{}')", id, nome);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.warn("Não foi possível encontrar um ID de Pessoa para nome='{}' (após falha na busca por CNPJ, se aplicável).", nome);
+            }
         }
 
-        String finalSql = sqlBase + whereClause.toString();
-
-        try {
-            Integer id = jdbc.queryForObject(finalSql, Integer.class, params.toArray());
-            log.info("ID de Pessoa encontrado: {} (busca por nome='{}' ou cnpj='{}')", id, nome, cnpj);
-            return id;
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID de Pessoa para nome='{}' ou cnpj='{}'", nome, cnpj);
-            return null;
-        }
+        return null;
     }
 
     private Integer findEmbalagemIdComDePara(String nomeOrigem) {
@@ -252,7 +277,6 @@ public class SqlServerRepository {
         if (model.getIdEnderecoCidade() == null) model.setIdEnderecoCidade(appProperties.getDefaults().getIdEnderecoCidade());
         if (model.getIdTipoColeta() == null) model.setIdTipoColeta(appProperties.getDefaults().getIdTipoColetaDefault());
         if (model.getIdAgente() == null) model.setIdAgente(appProperties.getDefaults().getIdAgente());
-
         if (model.getIdNaturezaCarga() == null) log.error("DTM {}: ID da Natureza da Carga é obrigatório e não foi encontrado.", model.getIdDtm());
         if (model.getIdEmbalagem() == null) log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado.", model.getIdDtm());
 

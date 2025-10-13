@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
     name = "adicionarOcorrencia",
-    url = "${app.salvarOcorrencia.baseUrl}"   // <-- URL fixa via property
+    url = "${app.salvarOcorrencia.baseUrl}"
 )
 public interface AdicionarOcorrenciaFeign {
 

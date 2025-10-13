@@ -12,29 +12,22 @@ public class SalvaColetaModel {
     @JsonProperty("idDtm")              private Long idDtm;
     @JsonProperty("TokenHash")          private String tokenHash;
     @JsonProperty("idPedidoColeta")     private Integer idPedidoColeta;
-
-    // IDs que serão preenchidos pelo Repository
     @JsonProperty("idRemetente")        private Integer idRemetente;
     @JsonProperty("idDestinatario")     private Integer idDestinatario;
     @JsonProperty("idTomador")          private Integer idTomador;
     @JsonProperty("idFilialResposavel") private Integer idFilialResposavel;
     @JsonProperty("idLocalColeta")      private Integer idLocalColeta;
-    
-    // --- CAMPOS PARA BUSCA DINÂMICA DE PESSOAS ---
     @JsonProperty("dsRemetente")        private String dsRemetente;
     @JsonProperty("cdRemetenteCnpj")    private String cdRemetenteCnpj;
     @JsonProperty("dsDestinatario")     private String dsDestinatario;
     @JsonProperty("cdDestinatarioCnpj") private String cdDestinatarioCnpj;
     @JsonProperty("dsTomador")          private String dsTomador;
     @JsonProperty("cdTomadorCnpj")      private String cdTomadorCnpj;
-    // --- FIM DOS CAMPOS DE BUSCA ---
-
     @JsonProperty("dtColeta")   @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtColeta;
 
     @JsonProperty("hrColetaInicio")     private String hrColetaInicio;
     @JsonProperty("hrColetaFim")        private String hrColetaFim;
-
     @JsonProperty("dtEntrega")  @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtEntrega;
 
@@ -45,36 +38,26 @@ public class SalvaColetaModel {
     @JsonProperty("dsEnderecoComplento")private String dsEnderecoComplento;
     @JsonProperty("cdEnderecoCEP")      private String cdEnderecoCEP;
     @JsonProperty("idEnderecoCidade")   private Integer idEnderecoCidade;
-
-    @JsonProperty("dsSolicitante")      private String dsSolicitante; // Email do solicitante
-    @JsonProperty("dsSolicitanteNome")  private String dsSolicitanteNome; // <<-- CAMPO ADICIONADO
+    @JsonProperty("dsSolicitante")      private String dsSolicitante;
+    @JsonProperty("dsSolicitanteNome")  private String dsSolicitanteNome;
     @JsonProperty("dsProcurarPor")      private String dsProcurarPor;
     @JsonProperty("nrTelefone")         private String nrTelefone;
-
-    // IDs que serão preenchidos pelo Repository
     @JsonProperty("idTipoColeta")       private Integer idTipoColeta;
     @JsonProperty("idAgente")           private Integer idAgente;
     @JsonProperty("idEmbalagem")        private Integer idEmbalagem;
     @JsonProperty("idNaturezaCarga")    private Integer idNaturezaCarga;
-
-    // --- CAMPOS DESCRITIVOS PARA BUSCA DOS IDs ---
-    @JsonProperty("dsAgente")           private String dsAgenteNome; // <<-- @JsonProperty CORRIGIDO
+    @JsonProperty("dsAgente")           private String dsAgenteNome;
     @JsonProperty("dsAgenteEmail")      private String dsAgenteEmail;
     @JsonProperty("dsTipoColeta")       private String dsTipoColeta;
     @JsonProperty("dsEmbalagem")        private String dsEmbalagem;
     @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga;
-    // --- FIM DOS CAMPOS DESCRITIVOS ---
-    
     @JsonProperty("nrReferencia")       private String nrReferencia;
     @JsonProperty("nrPedidoCliente")    private String nrPedidoCliente;
-
     @JsonProperty("NF")                 private List<SalvaColetaNFModel> nf;
     @JsonProperty("Dimensoes")          private List<SalvaColetaDimensoesModel> dimensoes;
     @JsonProperty("Monitoramento")      private List<SalvaColetaMonitoramentoModel> monitoramento;
-
     @JsonProperty("dsComentarios")      private String dsComentarios;
 
-    // Getters e Setters
     public Long getIdDtm() { return idDtm; }
     public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
     public String getTokenHash() { return tokenHash; }
@@ -161,6 +144,6 @@ public class SalvaColetaModel {
     public void setDsAgenteNome(String dsAgenteNome) { this.dsAgenteNome = dsAgenteNome; }
     public String getDsAgenteEmail() { return dsAgenteEmail; }
     public void setDsAgenteEmail(String dsAgenteEmail) { this.dsAgenteEmail = dsAgenteEmail; }
-    public String getDsSolicitanteNome() { return dsSolicitanteNome; } // <<-- GETTER/SETTER ADICIONADO
+    public String getDsSolicitanteNome() { return dsSolicitanteNome; }
     public void setDsSolicitanteNome(String dsSolicitanteNome) { this.dsSolicitanteNome = dsSolicitanteNome; }
 }

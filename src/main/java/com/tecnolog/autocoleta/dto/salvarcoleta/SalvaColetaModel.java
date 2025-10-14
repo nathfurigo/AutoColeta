@@ -51,7 +51,7 @@ public class SalvaColetaModel {
     @JsonProperty("dsTipoColeta")       private String dsTipoColeta;
     @JsonProperty("dsEmbalagem")        private String dsEmbalagem;
     @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga;
-    @JsonProperty("nrReferencia")       private String nrReferencia;
+    @JsonProperty("nrReferencia")       private Long nrReferencia;
     @JsonProperty("nrPedidoCliente")    private String nrPedidoCliente;
     @JsonProperty("NF")                 private List<SalvaColetaNFModel> nf;
     @JsonProperty("Dimensoes")          private List<SalvaColetaDimensoesModel> dimensoes;
@@ -128,8 +128,8 @@ public class SalvaColetaModel {
     public void setDsEmbalagem(String dsEmbalagem) { this.dsEmbalagem = dsEmbalagem; }
     public String getDsNaturezaCarga() { return dsNaturezaCarga; }
     public void setDsNaturezaCarga(String dsNaturezaCarga) { this.dsNaturezaCarga = dsNaturezaCarga; }
-    public String getNrReferencia() { return nrReferencia; }
-    public void setNrReferencia(String nrReferencia) { this.nrReferencia = nrReferencia; }
+    public Long getNrReferencia() { return nrReferencia; }
+    public void setNrReferencia(Long nrReferencia) { this.nrReferencia = nrReferencia; }
     public String getNrPedidoCliente() { return nrPedidoCliente; }
     public void setNrPedidoCliente(String nrPedidoCliente) { this.nrPedidoCliente = nrPedidoCliente; }
     public List<SalvaColetaNFModel> getNf() { return nf; }

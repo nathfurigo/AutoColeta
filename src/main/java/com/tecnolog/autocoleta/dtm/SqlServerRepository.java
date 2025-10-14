@@ -26,28 +26,54 @@ public class SqlServerRepository {
     private static final Map<String, String> NATUREZA_KEYWORD_MAP;
     static {
         NATUREZA_KEYWORD_MAP = new HashMap<>();
-        NATUREZA_KEYWORD_MAP.put("PARAF", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("TUBO", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("FLANGE", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("JUNTA", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("CONECTOR", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("VÁLVULA", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("LUVA", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("PLUGUE", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("ELEMENTO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("BUCHA", "BUCHA");
+        NATUREZA_KEYWORD_MAP.put("CAIXA PASSAG", "CAIXA DE PASSAGEM");
+        NATUREZA_KEYWORD_MAP.put("VÁLV.ESF", "VALVULAS");
+        NATUREZA_KEYWORD_MAP.put("VÁLVULA", "VALVULAS");
+        NATUREZA_KEYWORD_MAP.put("VALVULA", "VALVULAS");
+        NATUREZA_KEYWORD_MAP.put("ANEL O", "ANEL");
+        NATUREZA_KEYWORD_MAP.put("DETECTOR DE GÁS", "DETECTOR DE GAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("DETECTOR", "DETECTORES");
+        NATUREZA_KEYWORD_MAP.put("TARUGO", "TARUGO MACIÇO");
+        NATUREZA_KEYWORD_MAP.put("UNIAO", "UNIAO DE ACO");
+        NATUREZA_KEYWORD_MAP.put("NIPLE", "NIPLE");
+        NATUREZA_KEYWORD_MAP.put("MACACAO", "MACACAO RF");
+        NATUREZA_KEYWORD_MAP.put("ARRUELA", "ARRUELAS");
+        NATUREZA_KEYWORD_MAP.put("CURVA TUBO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("TUBO", "TUBOS");
+        NATUREZA_KEYWORD_MAP.put("FLANGE", "FLANGE");
+        NATUREZA_KEYWORD_MAP.put("JUNTA", "JUNTAS");
+        NATUREZA_KEYWORD_MAP.put("CONECTOR", "CONECTOR");
+        NATUREZA_KEYWORD_MAP.put("LUVA", "LUVAS");
+        NATUREZA_KEYWORD_MAP.put("PLUGUE", "PLUG");
+        NATUREZA_KEYWORD_MAP.put("ELEMENTO", "ELEMENTO FILTRANTE");
         NATUREZA_KEYWORD_MAP.put("PROTETOR", "EQUIPAMENTO DE SEGURANCA");
-        NATUREZA_KEYWORD_MAP.put("TERMINAL", "MATERIAL ELETRICO");
-        NATUREZA_KEYWORD_MAP.put("CABO", "MATERIAL ELETRICO");
+        NATUREZA_KEYWORD_MAP.put("CABO", "CABOS EM GERAL");
         NATUREZA_KEYWORD_MAP.put("RELÉ", "RELE");
+        NATUREZA_KEYWORD_MAP.put("RELE", "RELE");
         NATUREZA_KEYWORD_MAP.put("CALÇA", "CONFECCOES");
-        NATUREZA_KEYWORD_MAP.put("MACACÃO", "CONFECCOES");
         NATUREZA_KEYWORD_MAP.put("CAMISA", "CONFECCOES");
         NATUREZA_KEYWORD_MAP.put("JOGO", "PECAS P/ MAQUINAS INDUSTRIAIS");
-        NATUREZA_KEYWORD_MAP.put("FLANG", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("RAQUETE", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("LANTERNA", "LANTERNA");
-        NATUREZA_KEYWORD_MAP.put("EXPLOSÃO", "EQUIPAMENTO DE SEGURANCA");
-        NATUREZA_KEYWORD_MAP.put("PLASTCOR", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("ABRAÇADEIRA", "ABRACADEIRA");
+        NATUREZA_KEYWORD_MAP.put("BUJÃO", "BUJAO");
+        NATUREZA_KEYWORD_MAP.put("CARTUCHO", "CARTUCHO");
+        NATUREZA_KEYWORD_MAP.put("JAQUETA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("JOELHO", "JOELHO");
+        NATUREZA_KEYWORD_MAP.put("KIT", "KITS");
+        NATUREZA_KEYWORD_MAP.put("ROLAMENTO", "ROLAMENTOS");
+        NATUREZA_KEYWORD_MAP.put("TAMPÃO", "TAMPAO");
+        NATUREZA_KEYWORD_MAP.put("UNIÃO", "UNIAO DE ACO");
+        NATUREZA_KEYWORD_MAP.put("MACACÃO", "MACACAO RF");
+        NATUREZA_KEYWORD_MAP.put("PARAF. ESTOJO", "PARAFUSOS");
+        NATUREZA_KEYWORD_MAP.put("PARAFUSO MÁQ", "PARAFUSOS");
+        NATUREZA_KEYWORD_MAP.put("PARAF", "PARAFUSOS");
+        NATUREZA_KEYWORD_MAP.put("TERMINAL CU", "MATERIAL ELETRICO");
+        NATUREZA_KEYWORD_MAP.put("TERMINAL", "MATERIAL ELETRICO");
+        NATUREZA_KEYWORD_MAP.put("PORCA P/TUB", "PORCA");
+        NATUREZA_KEYWORD_MAP.put("PORCA", "PORCA");
+        NATUREZA_KEYWORD_MAP.put("TUBO SIFÃO", "TUBOS");
     }
 
     private static final Map<String, String> PESSOA_ALIAS_MAP;
@@ -63,11 +89,15 @@ public class SqlServerRepository {
         PESSOA_ALIAS_MAP.put("ARM-MACAE", "PETROLEO BRASILEIRO S/A - MACAE AGENDAMENTO");
         PESSOA_ALIAS_MAP.put("UTE MARIO LAGO", "PETROLEO BRASILEIRO S.A - UTE LEONEL BRISOLA");
         PESSOA_ALIAS_MAP.put("UTGC LINHARES", "PETROLEO BRASILEIRO - LINHARES");
-        PESSOA_ALIAS_MAP.put("UTE EUZÉBIO ROCHA", "PETROLEO BRASILEIRO S.A - CUBATAO");
+        PESSOA_ALIAS_MAP.put("UTE EUZÉBIO ROCHA", "PETROLEO BRASILEIRO S.A - IPOJUCA");
+        PESSOA_ALIAS_MAP.put("EDISEN", "PETROLEO BRASILEIRO S.A - CUBATAO");
+        PESSOA_ALIAS_MAP.put("ARM-RIO", "PETROLEO BRASILEIRO S.A.(CORDOVIL) - (AGENDAMENTO");
+        PESSOA_ALIAS_MAP.put("EDIVIT", "PETROLEO BRASILEIRO S/A");
         PESSOA_ALIAS_MAP.put("UTE TRES LAGOAS", "PETROLEO BRASILEIRO S.A - UTE TRES LAGOAS");
-        PESSOA_ALIAS_MAP.put("EDISER", "PETROLEO BRASILEIRO S.A - EDISER");
-        PESSOA_ALIAS_MAP.put("EDISEN", "PETROLEO BRASILEIRO S.A - EDISER");
-
+        PESSOA_ALIAS_MAP.put("EDISER", "PETROLEO BRASILEIRO S/A - NATAL");
+        PESSOA_ALIAS_MAP.put("BASE TAQUIPE", "PETROBRAS (TAQUIPE)");
+        PESSOA_ALIAS_MAP.put("CENPES - PORTARIA 4", "PETROLEO BRASILEIRO S/A - CENPES");
+        PESSOA_ALIAS_MAP.put("WHITE MARTINS GASES INDUSTRIAIS LTDA - VINHEDO SP", "WHITE MARTINS");
     }
 
     public SqlServerRepository(@Qualifier("sqlServerJdbcTemplate") JdbcTemplate jdbc, AppProperties appProperties) {
@@ -79,17 +109,12 @@ public class SqlServerRepository {
         if (dtmId == null || dtmId.isBlank()) {
             return null;
         }
-
         String sql = """
             SELECT TOP 1 pc.id_PedidoColeta
             FROM tbdPedidoColeta pc
             LEFT JOIN tbdItemPedidoColeta ipc ON pc.id_PedidoColeta = ipc.id_PedidoColeta
-            WHERE
-                ipc.nr_Referencia = ? OR
-                ipc.nr_PedidoCliente = ? OR
-                pc.cm_PedidoColeta LIKE ?
-        """;
-
+            WHERE ipc.nr_Referencia = ? OR ipc.nr_PedidoCliente = ? OR pc.cm_PedidoColeta LIKE ?
+            """;
         try {
             return jdbc.queryForObject(sql, Integer.class, dtmId, dtmId, "%" + dtmId + "%");
         } catch (EmptyResultDataAccessException e) {
@@ -105,13 +130,10 @@ public class SqlServerRepository {
         if (model.getIdLocalColeta() == null) {
             model.setIdLocalColeta(model.getIdRemetente());
         }
-
         model.setIdAgente(findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail()));
-
         model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem()));
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
-
         if (model.getIdRemetente() != null && (model.getIdEmbalagem() == null || model.getIdNaturezaCarga() == null)) {
             try {
                 String sql = "SELECT id_Embalagem, id_NaturezaMercadoria FROM tbdRemetente WHERE id_Remetente = ?";
@@ -125,7 +147,6 @@ public class SqlServerRepository {
                 log.warn("DTM {}: Nenhuma configuração padrão de Embalagem/Natureza encontrada para o remetente ID {}.", model.getIdDtm(), model.getIdRemetente());
             }
         }
-
         fillDefaultsIfNull(model);
     }
 
@@ -133,16 +154,13 @@ public class SqlServerRepository {
         if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) {
             return null;
         }
-
         String sql = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p INNER JOIN tbdAgente a ON p.id_Pessoa = a.id_Agente WHERE ISNULL(a.tp_InativoErrado, 'N') <> 'S' AND (";
         StringBuilder whereClause = new StringBuilder();
         List<Object> params = new ArrayList<>();
-
         if (email != null && !email.isBlank()) {
             whereClause.append("LOWER(p.cd_Email) = ?");
             params.add(email.toLowerCase());
         }
-        
         if (nome != null && !nome.isBlank()) {
             if (!whereClause.isEmpty()) {
                 whereClause.append(" OR ");
@@ -150,19 +168,15 @@ public class SqlServerRepository {
             whereClause.append("LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?");
             params.add("%" + nome.toLowerCase() + "%");
         }
-
         if (params.isEmpty()) {
             return null;
         }
-
         String finalSql = sql + whereClause.toString() + ")";
-
         try {
             Integer id = jdbc.queryForObject(finalSql, Integer.class, params.toArray());
             log.info("ID do Agente encontrado: {} (busca por nome='{}' ou email='{}')", id, nome, email);
             return id;
         } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID de Agente para nome='{}' ou email='{}'", nome, email);
             return null;
         }
     }
@@ -180,7 +194,7 @@ public class SqlServerRepository {
                 log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
                 return id;
             } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Tentando buscar pelo nome '{}'.", cnpj, nome);
+                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Prosseguindo para buscar pelo nome '{}'.", cnpj, nome);
             }
         }
 
@@ -231,19 +245,23 @@ public class SqlServerRepository {
         if (nomeOrigem == null || nomeOrigem.isBlank()) return null;
 
         String nomeDestino = nomeOrigem;
+        boolean deParaEncontrado = false;
         try {
             String deParaSql = "SELECT ds_nome_destino_sqlserver FROM tbd_de_para_natureza WHERE ds_nome_origem_postgres = ?";
             nomeDestino = jdbc.queryForObject(deParaSql, String.class, nomeOrigem);
             log.info("Mapeamento De-Para encontrado para natureza '{}' -> '{}'", nomeOrigem, nomeDestino);
+            deParaEncontrado = true;
         } catch (EmptyResultDataAccessException e) {
             log.warn("Não foi encontrado mapeamento 'De-Para' para a natureza '{}'. Tentando mapeamento por palavra-chave.", nomeOrigem);
-
+        }
+        
+        if (!deParaEncontrado) {
             String nomeOrigemUpper = nomeOrigem.toUpperCase();
             for (Map.Entry<String, String> entry : NATUREZA_KEYWORD_MAP.entrySet()) {
                 if (nomeOrigemUpper.contains(entry.getKey())) {
                     nomeDestino = entry.getValue();
                     log.info("Mapeamento por palavra-chave encontrado para natureza '{}' -> '{}'", nomeOrigem, nomeDestino);
-                    break;
+                    break; 
                 }
             }
         }
@@ -283,8 +301,10 @@ public class SqlServerRepository {
         if (model.getIdEnderecoCidade() == null) model.setIdEnderecoCidade(appProperties.getDefaults().getIdEnderecoCidade());
         if (model.getIdTipoColeta() == null) model.setIdTipoColeta(appProperties.getDefaults().getIdTipoColetaDefault());
         if (model.getIdAgente() == null) model.setIdAgente(appProperties.getDefaults().getIdAgente());
-        if (model.getIdNaturezaCarga() == null) log.error("DTM {}: ID da Natureza da Carga é obrigatório e não foi encontrado.", model.getIdDtm());
-        if (model.getIdEmbalagem() == null) log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado.", model.getIdDtm());
+        if (model.getIdNaturezaCarga() == null) {
+                log.warn("DTM {}: ID da Natureza da Carga não foi encontrado. Aplicando natureza genérica de fallback (ID: 1400).", model.getIdDtm());
+                model.setIdNaturezaCarga(1400); 
+            }        if (model.getIdEmbalagem() == null) log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado.", model.getIdDtm());
 
         if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
             model.setHrColetaFim(appProperties.getDefaults().getHrFim());

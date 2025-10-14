@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<service>
+  <id>autocoleta</id>
+  <name>Automação do Pedido de Coleta Service</name>
+  <description>Servico de Automacao de Pedido de Coletas DTM.</description>
+
+  <executable>java</executable>
+  <arguments>
+    <argument>-jar</argument>
+    <argument>C:\autocoleta\autocoleta-1.0.0.jar</argument>
+
+    <argument>--spring.profiles.active=prod</argument>
+    
+    <argument>--spring.datasource.postgres.url=jdbc:postgresql://10.58.16.3:5432/dtbSyncLog_Hmg</argument>
+    <argument>--spring.datasource.postgres.username=postgres</argument>
+    <argument>--spring.datasource.postgres.password=BRU*980192@no</argument>
+    <argument>--spring.datasource.postgres.driver-class-name=org.postgresql.Driver</argument>
+
+    <argument>--spring.datasource.sqlserver.url=jdbc:sqlserver://esl.tecnolog.com.br:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;</argument>
+    <argument>--spring.datasource.sqlserver.username=sa</argument>
+    <argument>--spring.datasource.sqlserver.password=esl@13509</argument>
+    <argument>--spring.datasource.sqlserver.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver</argument>
+    
+    <argument>--server.port=1515</argument>
+    <argument>--logging.level.com.zaxxer.hikari=DEBUG</argument>
+    <argument>--logging.level.org.postgresql=DEBUG</argument>
+  </arguments>
+
+  <workingdirectory>C:\autocoleta</workingdirectory>
+  <logpath>C:\autocoleta\logs</logpath>
+  <logmode>rotate</logmode>
+  <startmode>Automatic</startmode>
+  <onfailure action="restart" delay="10 sec"/>
+</service>

@@ -8,6 +8,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Ferramenta autônoma (monolito) para baixar múltiplos XMLs de CTe em lote
@@ -28,8 +30,10 @@ public class BaixarXmlCte {
     public static void main(String[] args) {
         System.out.println("--- Ferramenta de Download de XML do CTe em Lote (Java) ---");
 
-        // NOVO: Lista de dados para processar. Cada linha contém: { "Valor Buscado", "Chave de Acesso" }
+        List<String> dtmsNaoEncontrados = new ArrayList<>();
+
         String[][] dadosParaBusca = {
+            // Lista Original
             {"200086138", "35250107890229000198570080000025691424994199"},
             {"200083470", "35241207890229000198570080000015651498452285"},
             {"200086944", "35250107890229000198570080000026341217753854"},
@@ -98,19 +102,65 @@ public class BaixarXmlCte {
             {"200086474", "35250107890229000198570080000025841541803116"},
             {"200083479", "35241207890229000198570080000015671001288318"},
             {"200085626", "35250107890229000198570080000021681919748363"},
-            {"200083141", "35241207890229000198570080000010571901281286"}
+            {"200083141", "35241207890229000198570080000010571901281286"},
+
+            // >>> INÍCIO DA MODIFICAÇÃO: Novos CT-es adicionados <<<
+            {"200079099", "35241107890229000198570080000002621352822170"},
+            {"200083731", "35241207890229000198570080000015631386119148"},
+            {"200083155", "35241207890229000198570080000010581391243679"},
+            {"200079870", "35241107890229000198570080000004031640301141"},
+            {"200080336", "35241107890229000198570080000004581695375005"},
+            {"200082977", "35241207890229000198570080000012701231732146"},
+            {"200079637", "35241107890229000198570080000000741139310117"},
+            {"200081807", "35241207890229000198570080000006441114988320"},
+            {"200082227", "35241207890229000198570080000013381027511992"},
+            {"200080598", "35241107890229000198570080000002731733570766"},
+            {"200082188", "35241207890229000198570080000011971186490779"},
+            {"200080654", "35241107890229000198570080000004021582103551"},
+            {"200077579", "35241107890229000198570080000004061342099044"},
+            {"200077579", "35241160541240000125570100000000171105418268"},
+            {"200083116", "35241207890229000198570080000014031615387389"},
+            {"200084715", "35241207890229000198570080000018471266630352"},
+            {"200083479", "35241207890229000198570080000015671001288318"},
+            {"200083141", "35241207890229000198570080000010571901281286"},
+            {"200079808", "35241107890229000198570080000002161767518264"},
+            {"200082824", "35241207890229000198570070000005861965497539"},
+            {"200083556", "35241207890229000198570070000008051493549091"},
+            {"200083470", "35241207890229000198570080000015651498452285"},
+            {"200081484", "35241207890229000198570080000006451566618501"},
+            {"200080937", "35241107890229000198570080000003851307528749"},
+            {"200080658", "35241107890229000198570080000004011425915462"},
+            {"200083359", "35241207890229000198570080000015851547203541"},
+            {"200079559", "35241107890229000198570080000002501718773967"},
+            {"200084168", "35241207890229000198570080000015691059156214"},
+            {"200082318", "35241207890229000198570080000013341575446534"},
+            {"200083635", "35241207890229000198570080000013831880796190"},
+            {"200081790", "35241207890229000198570080000006431623716649"},
+            {"200079958", "35241107890229000198570080000003771414659713"}
+            // >>> FIM DA MODIFICAÇÃO <<<
         };
         
-        // NOVO: Loop para iterar sobre a lista de dados
         for (String[] dado : dadosParaBusca) {
             String valorBuscado = dado[0];
             String chaveAcesso = dado[1];
             
             System.out.println("\n" + "-".repeat(60));
             System.out.println("Processando Valor Buscado: " + valorBuscado + " | Chave: " + chaveAcesso);
+
+            String diretorioBase = "C:\\DTM Weliton\\";
+            String caminhoCompletoArquivo = diretorioBase + valorBuscado + File.separator + chaveAcesso + ".xml";
+            File arquivoXml = new File(caminhoCompletoArquivo);
+
+            if (arquivoXml.exists()) {
+                System.out.println("INFO: O arquivo XML já existe. Pulando para o próximo.");
+                continue; 
+            }
             
             if (chaveAcesso.length() == 44 && chaveAcesso.matches("\\d+")) {
-                buscarESalvarXml(chaveAcesso, valorBuscado);
+                boolean sucesso = buscarESalvarXml(chaveAcesso, valorBuscado);
+                if (!sucesso) {
+                    dtmsNaoEncontrados.add(valorBuscado + " (Chave: " + chaveAcesso + ")");
+                }
             } else {
                 System.err.println("Erro: A chave de acesso '" + chaveAcesso + "' é inválida. Pulando...");
             }
@@ -118,14 +168,24 @@ public class BaixarXmlCte {
         
         System.out.println("\n" + "-".repeat(60));
         System.out.println("--- Processo em lote finalizado! ---");
+
+        if (!dtmsNaoEncontrados.isEmpty()) {
+            System.err.println("\n--- RESUMO: XMLs NÃO ENCONTRADOS NO BANCO DE DADOS ---");
+            for (String dtm : dtmsNaoEncontrados) {
+                System.err.println("- " + dtm);
+            }
+        } else {
+            System.out.println("\n--- RESUMO: Todos os XMLs foram encontrados e processados com sucesso! ---");
+        }
     }
 
     /**
      * Conecta ao banco de dados, busca o XML e o salva em um arquivo.
      * @param chaveCte A chave de acesso de 44 dígitos.
      * @param pastaDestino O nome da pasta onde o XML será salvo (o "Valor Buscado").
+     * @return Retorna true se encontrou o XML, false caso contrário.
      */
-    private static void buscarESalvarXml(String chaveCte, String pastaDestino) {
+    private static boolean buscarESalvarXml(String chaveCte, String pastaDestino) {
         System.out.println("--- Iniciando busca do XML no banco de dados ---");
 
         try {
@@ -154,30 +214,29 @@ public class BaixarXmlCte {
                     if (rs.next()) {
                         System.out.println("3. Registro encontrado!");
                         String xmlContent = rs.getString("ds_XML");
-                        // MODIFICADO: Passa a pasta de destino para a função de salvar
                         salvarArquivo(chaveCte, xmlContent, pastaDestino);
+                        return true;
                     } else {
                         System.err.println("AVISO: Nenhum XML foi encontrado para a chave de acesso fornecida nesta tabela.");
+                        return false;
                     }
                 }
             }
         } catch (SQLException e) {
             System.err.println("ERRO DE BANCO DE DADOS: Não foi possível conectar ou executar a consulta.");
             System.err.println("Verifique se a VPN está ativa, se os dados de conexão estão corretos e se a tabela/banco para o ano/mês existe.");
+            return false;
         } catch (Exception e) {
             System.err.println("Ocorreu um erro inesperado: " + e.getMessage());
+            return false;
         }
     }
 
     /**
      * Salva o conteúdo XML em um arquivo no diretório especificado.
-     * @param nomeBase Nome do arquivo (sem extensão), geralmente a chave do CTe.
-     * @param conteudo Conteúdo XML a ser salvo.
-     * @param nomePasta O nome da pasta específica para este XML (o "Valor Buscado").
      */
     private static void salvarArquivo(String nomeBase, String conteudo, String nomePasta) {
         try {
-            // MODIFICADO: Define o diretório de destino dinamicamente
             String diretorioBase = "C:\\DTM Weliton\\";
             String diretorioDestino = diretorioBase + nomePasta + File.separator;
             

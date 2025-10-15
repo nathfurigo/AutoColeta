@@ -16,7 +16,7 @@ import java.util.List;
  * diretamente do banco de dados SQL Server e salvá-los em pastas específicas.
  * Lógica de busca ajustada para usar o id_Movimento.
  */
-public class BaixarXmlCte {
+public class BaixarXmlCtePorChave2 {
 
     // --- CONFIGURAÇÕES DO BANCO DE DADOS ---
     private static final String DB_SERVER = "192.168.10.251";
@@ -33,7 +33,8 @@ public class BaixarXmlCte {
 
         List<String> dtmsNaoEncontrados = new ArrayList<>();
 
-        // Lista de DTMs que não foram encontrados na execução anterior.
+        // <<< MUDANÇA PRINCIPAL 1: O array agora tem 3 colunas: { "DTM", "ID_Movimento", "Chave de Acesso" } >>>
+        // Itens que já foram processados com sucesso foram removidos.
         String[][] dadosParaBusca = {
                 {"200083470", "995286", "35241207890229000198570080000015651498452285"},
                 {"200082824", "993737", "35241207890229000198570070000005861965497539"},
@@ -113,7 +114,6 @@ public class BaixarXmlCte {
 
     /**
      * Conecta ao banco de dados, busca o XML e o salva em um arquivo.
-     * A lógica foi ajustada para tentar múltiplos bancos de dados e tabelas se o primeiro falhar.
      * @param chaveCte A chave de acesso de 44 dígitos (usada para definir a tabela).
      * @param pastaDestino O nome da pasta onde o XML será salvo (o "Valor Buscado").
      * @param idMovimento O ID do movimento a ser buscado na tabela.
@@ -122,62 +122,50 @@ public class BaixarXmlCte {
     private static boolean buscarESalvarXml(String chaveCte, String pastaDestino, String idMovimento) {
         System.out.println("--- Iniciando busca do XML no banco de dados ---");
 
-        String ano = chaveCte.substring(2, 4);
-        String mes = chaveCte.substring(4, 6);
-
-        // Lista de bancos para tentar a busca. O primeiro é o padrão, os seguintes são fallbacks.
-        List<String> databasesParaTentar = new ArrayList<>();
-        databasesParaTentar.add("dtbCTe20" + ano); // Ex: dtbCTe2024
-        databasesParaTentar.add("dtbCTe2025");     // Fallback para o banco de 2025
-
-        for (String nomeDatabase : databasesParaTentar) {
-            System.out.println("\nTentando busca no banco de dados: '" + nomeDatabase + "'...");
+        try {
+            String ano = chaveCte.substring(2, 4);
+            String mes = chaveCte.substring(4, 6);
             
-            try {
-                // <<< AJUSTE: Se a busca for no banco de 2025, o nome da tabela será sempre 'tbdCTeXMLMovimento01' >>>
-                String mesDaTabela = mes;
-                if ("dtbCTe2025".equals(nomeDatabase)) {
-                    mesDaTabela = "01";
-                }
-                String nomeTabela = String.format("[%s].[dbo].[tbdCTeXMLMovimento%s]", nomeDatabase, mesDaTabela);
+            String nomeDatabase = "dtbCTe20" + ano;
+            String nomeTabela = String.format("[%s].[dbo].[tbdCTeXMLMovimento%s]", nomeDatabase, mes);
 
-                String connectionUrl = String.format(
-                    "jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
-                    DB_SERVER, DB_PORT, nomeDatabase
-                );
+            String connectionUrl = String.format(
+                "jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
+                DB_SERVER, DB_PORT, nomeDatabase
+            );
+            
+            // <<< MUDANÇA PRINCIPAL 2: A query agora busca pelo id_Movimento >>>
+            String sqlQuery = String.format("SELECT TOP 1 ds_XML FROM %s WHERE id_Movimento = ?", nomeTabela);
+
+            System.out.println("1. Conectando ao banco de dados: '" + nomeDatabase + "'...");
+
+            try (Connection conn = DriverManager.getConnection(connectionUrl, DB_USER, DB_PASSWORD);
+                 PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
                 
-                String sqlQuery = String.format("SELECT TOP 1 ds_XML FROM %s WHERE id_Movimento = ?", nomeTabela);
-
-                System.out.println("1. Conectando e executando consulta...");
-                System.out.println("   - Tabela: " + nomeTabela);
-                System.out.println("   - ID Movimento: " + idMovimento);
-
-                try (Connection conn = DriverManager.getConnection(connectionUrl, DB_USER, DB_PASSWORD);
-                     PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
-                    
-                    pstmt.setString(1, idMovimento);
-                    
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        if (rs.next()) {
-                            System.out.println("3. Registro encontrado!");
-                            String xmlContent = rs.getString("ds_XML");
-                            salvarArquivo(chaveCte, xmlContent, pastaDestino);
-                            return true; // SUCESSO: Encontrou, para a busca e retorna true.
-                        } else {
-                            System.out.println("INFO: Nenhum XML encontrado para o ID Movimento nesta tabela/banco.");
-                        }
+                // <<< MUDANÇA PRINCIPAL 3: O parâmetro da query agora é o idMovimento >>>
+                pstmt.setString(1, idMovimento);
+                System.out.println("2. Executando consulta na tabela: " + nomeTabela + " com id_Movimento = " + idMovimento);
+                
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        System.out.println("3. Registro encontrado!");
+                        String xmlContent = rs.getString("ds_XML");
+                        salvarArquivo(chaveCte, xmlContent, pastaDestino);
+                        return true;
+                    } else {
+                        System.err.println("AVISO: Nenhum XML foi encontrado para o id_Movimento fornecido nesta tabela.");
+                        return false;
                     }
                 }
-            } catch (SQLException e) {
-                System.err.println("AVISO: Falha ao consultar o banco '" + nomeDatabase + "'. Mensagem: " + e.getMessage());
-                System.err.println("       Tentando o próximo banco de dados da lista (se houver).");
-            } catch (Exception e) {
-                System.err.println("Ocorreu um erro inesperado ao tentar o banco '" + nomeDatabase + "': " + e.getMessage());
             }
+        } catch (SQLException e) {
+            System.err.println("ERRO DE BANCO DE DADOS: Não foi possível conectar ou executar a consulta.");
+            System.err.println("Verifique se a VPN está ativa, se os dados de conexão estão corretos e se a tabela/banco para o ano/mês existe.");
+            return false;
+        } catch (Exception e) {
+            System.err.println("Ocorreu um erro inesperado: " + e.getMessage());
+            return false;
         }
-
-        System.err.println("FALHA FINAL: O XML não foi encontrado em nenhum dos bancos de dados configurados para a busca.");
-        return false;
     }
 
     /**
@@ -208,4 +196,3 @@ public class BaixarXmlCte {
         }
     }
 }
-

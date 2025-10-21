@@ -42,7 +42,7 @@ logging:
 
 app:
   scheduler:
-    batch-size: 100            
+    batch-size: 5           
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"

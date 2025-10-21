@@ -91,9 +91,15 @@ public class DtmJsonToSalvaColetaMapper {
             List<SalvaColetaDimensoesModel> dimensoes = dtmJson.getCargas().stream()
                 .map(carga -> {
                     SalvaColetaDimensoesModel dim = new SalvaColetaDimensoesModel();
+                    
+                    // AJUSTE CORRIGIDO:
+                    // O Controller C# divide por 100 (centímetros para metros), o que implica
+                    // que ele espera o valor em CM. O DtmJson já possui campos '_cm'.
+                    // NÃO FAZER MULTIPLICAÇÃO AQUI para que o valor seja em centímetros.
                     dim.setComp(carga.getComp());
                     dim.setLarg(carga.getLarg());
                     dim.setAlt(carga.getAlt());
+
                     dim.setQt(carga.getQuantidade());
                     dim.setKg(carga.getPesoBruto());
                     return dim;

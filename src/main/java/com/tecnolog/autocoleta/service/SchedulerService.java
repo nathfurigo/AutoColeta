@@ -15,7 +15,7 @@ public class SchedulerService {
 
     private final DtmAutomationService automationService;
 
-    @Value("${app.scheduler.batch-size:10}")
+    @Value("${app.scheduler.batch-size:5}")
     private int batchSize;
 
     public SchedulerService(DtmAutomationService automationService) {

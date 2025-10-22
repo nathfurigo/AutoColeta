@@ -3,6 +3,8 @@ package com.tecnolog.autocoleta.dtm;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaDimensoesModel;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaNFModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 @Component
 public class DtmJsonToSalvaColetaMapper {
 
+    private static final Logger log = LoggerFactory.getLogger(DtmJsonToSalvaColetaMapper.class);
     private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     public SalvaColetaModel map(DtmJson dtmJson, long idDtm) {
@@ -23,15 +26,15 @@ public class DtmJsonToSalvaColetaMapper {
 
         // 1. Mapeamento de IDs e Referências
         model.setIdDtm(idDtm);
-        model.setNrReferencia(dtmJson.getDtm()); // O 'Id' do JSON parece ser a referência principal
-        model.setNrPedidoCliente(dtmJson.getReferencia()); // 'Referencia' do JSON vira o pedido do cliente
+        model.setNrReferencia(dtmJson.getDtm());
+        model.setNrPedidoCliente(dtmJson.getReferencia());
 
         // 2. Mapeamento de Remetente, Destinatário e Tomador
         // A lógica de produção indica que o Remetente é também o Tomador (pagador)
         if (dtmJson.getOrigem() != null) {
             DtmJson.Endpoint origem = dtmJson.getOrigem();
             model.setDsRemetente(origem.getNome());
-            model.setDsTomador(origem.getNome()); // Tomador igual ao Remetente
+            model.setDsTomador(origem.getNome());
             model.setDsEndereco(origem.getEndereco());
             model.setNrEnderecoNR(origem.getNumero());
             model.setDsEnderecoBairro(origem.getBairro());
@@ -60,7 +63,6 @@ public class DtmJsonToSalvaColetaMapper {
         }
 
         // 4. Mapeamento do Modal (Aéreo/Rodoviário) - Regra crucial para bater com Produção
-        // Em produção, o modal parece ser Aéreo ('A'). Vamos definir essa regra.
         // tpModal: 1 = Rodo, 2 = Aéreo
         String nivelServico = dtmJson.getNivelServico() != null ? dtmJson.getNivelServico().toUpperCase() : "";
         if (nivelServico.contains("AEREO") || nivelServico.contains("AÉREO")) {
@@ -80,7 +82,6 @@ public class DtmJsonToSalvaColetaMapper {
                     SalvaColetaNFModel nfModel = new SalvaColetaNFModel();
                     nfModel.setNr(nota.getNumero() != null ? nota.getNumero().toString() : null);
                     nfModel.setVl(nota.getValor() != null ? BigDecimal.valueOf(nota.getValor()) : null);
-                    // A chave não está no DtmJson, será preenchida posteriormente se necessário
                     return nfModel;
                 }).collect(Collectors.toList());
             model.setNf(nfs);
@@ -92,16 +93,24 @@ public class DtmJsonToSalvaColetaMapper {
                 .map(carga -> {
                     SalvaColetaDimensoesModel dim = new SalvaColetaDimensoesModel();
                     
-                    // AJUSTE CORRIGIDO:
-                    // O Controller C# divide por 100 (centímetros para metros), o que implica
-                    // que ele espera o valor em CM. O DtmJson já possui campos '_cm'.
-                    // NÃO FAZER MULTIPLICAÇÃO AQUI para que o valor seja em centímetros.
-                    dim.setComp(carga.getComp());
-                    dim.setLarg(carga.getLarg());
-                    dim.setAlt(carga.getAlt());
+                    // O C# espera o valor em CM para depois dividir por 100 e salvar em metros.
+                    // Multiplicamos por 100.0 aqui para converter de METROS (DTM) para CM (Esperado pelo C#).
+                    Double compConvertido = carga.getComp() != null ? carga.getComp() * 100.0 : null;
+                    Double largConvertido = carga.getLarg() != null ? carga.getLarg() * 100.0 : null;
+                    Double altConvertido = carga.getAlt() != null ? carga.getAlt() * 100.0 : null;
+
+                    dim.setComp(compConvertido);
+                    dim.setLarg(largConvertido);
+                    dim.setAlt(altConvertido);
 
                     dim.setQt(carga.getQuantidade());
                     dim.setKg(carga.getPesoBruto());
+                    
+                    log.debug("DTM {}: Dimensões mapeadas - Entrada(M): {}/{}/{} -> Saída(CM): {}/{}/{}", 
+                              idDtm, 
+                              carga.getComp(), carga.getLarg(), carga.getAlt(), 
+                              compConvertido, largConvertido, altConvertido);
+                              
                     return dim;
                 }).collect(Collectors.toList());
             model.setDimensoes(dimensoes);

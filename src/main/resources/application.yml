@@ -48,16 +48,16 @@ app:
     lock-table: "public.dtm_automation_lock"
   salvarColeta:
   #Homologação
-    baseUrl: "https://Hmg-beta.synclog.com.br"
+    #baseUrl: "https://Hmg-beta.synclog.com.br"
   #Produção
-#    baseUrl: "https://beta.synclog.com.br"
-    tokenHash: "6B853C56-1F38-4836-A0BA-9378ED84A6E0"
+    baseUrl: "https://beta.synclog.com.br"
+    tokenHash: "FF08C55E-9D84-4E09-A19C-920F66255E19"
     timeout-seconds: 30
   salvarOcorrencia:
   #Homologação
-    baseUrl: "https://dev.synclog.com.br"
+    #baseUrl: "https://dev.synclog.com.br"
   #Produção
-#    baseUrl: "https://synclog.com.br"
+    baseUrl: "https://synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
     hr-inicio: "00:00"         

@@ -11,12 +11,12 @@
 
     <argument>--spring.profiles.active=prod</argument>
     
-    <argument>--spring.datasource.postgres.url=jdbc:postgresql://10.58.16.3:5432/dtbSyncLog_Hmg</argument>
+    <argument>--spring.datasource.postgres.url=jdbc:postgresql://10.58.16.3:5432/dtbSyncLog</argument>
     <argument>--spring.datasource.postgres.username=postgres</argument>
     <argument>--spring.datasource.postgres.password=BRU*980192@no</argument>
     <argument>--spring.datasource.postgres.driver-class-name=org.postgresql.Driver</argument>
 
-    <argument>--spring.datasource.sqlserver.url=jdbc:sqlserver://esl.tecnolog.com.br:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;</argument>
+    <argument>--spring.datasource.sqlserver.url=jdbc:sqlserver://esl.tecnolog.com.br:1433;databaseName=dtbTransporte;encrypt=true;trustServerCertificate=true;</argument>
     <argument>--spring.datasource.sqlserver.username=sa</argument>
     <argument>--spring.datasource.sqlserver.password=esl@13509</argument>
     <argument>--spring.datasource.sqlserver.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver</argument>

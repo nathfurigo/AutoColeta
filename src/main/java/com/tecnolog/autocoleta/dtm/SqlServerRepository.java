@@ -74,6 +74,10 @@ public class SqlServerRepository {
         NATUREZA_KEYWORD_MAP.put("PORCA P/TUB", "PORCA");
         NATUREZA_KEYWORD_MAP.put("PORCA", "PORCA");
         NATUREZA_KEYWORD_MAP.put("TUBO SIFÃO", "TUBOS");
+        // NOVOS MAPEAMENTOS ADICIONADOS PARA REDUZIR FALHAS
+        NATUREZA_KEYWORD_MAP.put("COLAR", "CONEXÕES");
+        NATUREZA_KEYWORD_MAP.put("SOLENÓIDE", "VALVULAS");
+
     }
     private static final Map<String, String> PESSOA_ALIAS_MAP;
     static {

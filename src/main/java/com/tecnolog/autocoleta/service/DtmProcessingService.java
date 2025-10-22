@@ -89,6 +89,9 @@ public class DtmProcessingService {
                 throw new IllegalStateException("Falha de enriquecimento de dados. IDs ausentes: " + String.join(", ", missingFields));
             }
 
+            // Log: Exibe o payload FINAL que será enviado, incluindo as dimensões corrigidas (multiplicadas por 100)
+            log.debug("Payload FINAL enviado para SalvarColeta {}: {}", idDtm, safeJson(requestPayload));
+
             SalvarColetaResponse response = salvarColetaClient.salvar(requestPayload);
             log.info("Resposta da API SalvarColeta para DTM {}: erro={}, response='{}'", idDtm, response.isErro(), response.getResponse());
 

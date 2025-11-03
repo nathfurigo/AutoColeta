@@ -1,7 +1,13 @@
 package com.tecnolog.autocoleta.dtm;
 
-import com.tecnolog.autocoleta.config.AppProperties;
-import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,11 +15,9 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.tecnolog.autocoleta.config.AppProperties;
+import com.tecnolog.autocoleta.domain.Modal;
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
 
 @Repository
 public class SqlServerRepository {
@@ -23,62 +27,444 @@ public class SqlServerRepository {
     private final AppProperties appProperties;
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^\\d]");
 
+    private static final Map<String, String> CIDADE_AGENTE_MAP;
+    static {
+        // Usa TreeMap para garantir a ordem alfabética automática pela chave
+        // *** ATENÇÃO: As chaves do mapa devem ser normalizadas (sem acento, maiúsculas) ***
+        CIDADE_AGENTE_MAP = new TreeMap<>();
+        
+        CIDADE_AGENTE_MAP.put("ALTO DO RODRIGUES/RN", "NAT - TRANSROCHA LOGISTICA");
+        CIDADE_AGENTE_MAP.put("ALVORADA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("ANCHIETA/ES", "VIX - TRANSMATTOS");
+        CIDADE_AGENTE_MAP.put("ARACAJU/SE", "AJU-LUCIANO DOS SANTOS ARMANDO");
+        CIDADE_AGENTE_MAP.put("ARAUCARIA/PR", "CWB - JOAMAC CARGAS AEREAS");
+        CIDADE_AGENTE_MAP.put("BARUERI/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("BELFORD ROXO/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("BELO HORIZONTE/MG", "BHZ - EDROSE LOGISTICA");
+        CIDADE_AGENTE_MAP.put("BETIM/MG", "BHZ - EDROSE LOGISTICA");
+        CIDADE_AGENTE_MAP.put("BOA VISTA/RR", "BVB - R.D. DE MEDEIROS TRANSPORTE");
+        CIDADE_AGENTE_MAP.put("BRASILIA/DF", "TEC - BSB");
+        CIDADE_AGENTE_MAP.put("CAJAMAR/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("CAMPINAS/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("CAMPO GRANDE/MS", "TJL - A.D.O. LOGISTICA E SERVICOS AUXILIARES EM TR");
+        CIDADE_AGENTE_MAP.put("CAMPOS DOS GOYTACAZES/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("CANOAS/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("CARAGUATATUBA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("CARLOS BARBOSA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("CATAGUASES/MG", "JDF - TRANSAGUIA"); // JDF cobre Cataguases
+        CIDADE_AGENTE_MAP.put("CATU/BA", "TEC - SSA");
+        CIDADE_AGENTE_MAP.put("CAUCAIA/CE", "FOR - M BRAGA JUNIOR");
+        CIDADE_AGENTE_MAP.put("CAXIAS DO SUL/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("COARI/AM", "TEC - MAO");
+        CIDADE_AGENTE_MAP.put("COTIA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("CUBATAO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("CUIABA/MT", "TEC - CGB");
+        CIDADE_AGENTE_MAP.put("CURITIBA/PR", "CWB - JOAMAC CARGAS AEREAS");
+        CIDADE_AGENTE_MAP.put("DIADEMA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("DUQUE DE CAXIAS/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("ESTANCIA VELHA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("FLORIANOPOLIS/SC", "FLN - ILHATUR");
+        CIDADE_AGENTE_MAP.put("FORTALEZA/CE", "FOR - M BRAGA JUNIOR");
+        CIDADE_AGENTE_MAP.put("FRANCO DA ROCHA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("GOIANIA/GO", "GYN - RAPIDO UNIVERSAL");
+        CIDADE_AGENTE_MAP.put("GUARULHOS/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("IBIRITE/MG", "BHZ - EDROSE LOGISTICA");
+        CIDADE_AGENTE_MAP.put("IPERO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("IPOJUCA/PE", "REC - DACAL EXPRESS CARGO");
+        CIDADE_AGENTE_MAP.put("ITABORAI/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("JOACABA/SC", "JCA - EXPRESSO JOACABA");
+        CIDADE_AGENTE_MAP.put("JUIZ DE FORA/MG", "JDF - TRANSAGUIA");
+        CIDADE_AGENTE_MAP.put("JUNDIAI/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("LAURO DE FREITAS/BA", "TEC - SSA");
+        CIDADE_AGENTE_MAP.put("LINHARES/ES", "VIX - TRANSMATTOS");
+        CIDADE_AGENTE_MAP.put("MACAE/RJ", "TEC - MCE");
+        CIDADE_AGENTE_MAP.put("MANAUS/AM", "TEC - MAO");
+        CIDADE_AGENTE_MAP.put("MAUA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("NATAL/RN", "NAT - TRANSROCHA LOGISTICA");
+        CIDADE_AGENTE_MAP.put("NILOPOLIS/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("PAULINIA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("PINDAMONHANGABA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("PINHAIS/PR", "CWB - JOAMAC CARGAS AEREAS");
+        CIDADE_AGENTE_MAP.put("PORTO ALEGRE/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("RECIFE/PE", "REC - DACAL EXPRESS CARGO");
+        CIDADE_AGENTE_MAP.put("RIO CLARO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("RIO DE JANEIRO/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("SALVADOR/BA", "TEC - SSA");
+        CIDADE_AGENTE_MAP.put("SANTOS/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO FRANCISCO DE PAULA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("SAO LUIS/MA", "SLZ - N M MACHADO TRANSP DE CARGAS RODOAERIAS");
+        CIDADE_AGENTE_MAP.put("SAO BERNARDO DO CAMPO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO FRANCISCO DO CONDE/BA", "TEC - SSA");
+        CIDADE_AGENTE_MAP.put("SAO JOSE DOS CAMPOS/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO MATEUS/ES", "VIX - TRANSMATTOS");
+        CIDADE_AGENTE_MAP.put("SAO MATEUS DO SUL/PR", "CWB - JOAMAC CARGAS AEREAS");
+        CIDADE_AGENTE_MAP.put("SAO PAULO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO SEBASTIAO DO PASSE/BA", "TEC - SSA");
+        CIDADE_AGENTE_MAP.put("SEROPEDICA/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("SERRA/ES", "VIX - TRANSMATTOS");
+        CIDADE_AGENTE_MAP.put("SOROCABA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("TERESINA/PI", "TEC - THE");
+        CIDADE_AGENTE_MAP.put("TRES LAGOAS/MS", "CGR - CR ENTREGAS RAPIDAS");
+        CIDADE_AGENTE_MAP.put("TRIUNFO/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
+        CIDADE_AGENTE_MAP.put("VARZEA PAULISTA/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("VINHEDO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("VITORIA/ES", "VIX - TRANSMATTOS");
+    }
     private static final Map<String, String> NATUREZA_KEYWORD_MAP;
     static {
-        NATUREZA_KEYWORD_MAP = new HashMap<>();
-        NATUREZA_KEYWORD_MAP.put("BUCHA", "BUCHA");
+        NATUREZA_KEYWORD_MAP = new LinkedHashMap<>();
+        NATUREZA_KEYWORD_MAP.put("DETECTOR DE GÁS", "DETECTOR DE GAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("TARUGO MACIÇO", "TARUGO MACIÇO");
+        NATUREZA_KEYWORD_MAP.put("UNIAO DE ACO", "UNIAO DE ACO");
+        NATUREZA_KEYWORD_MAP.put("MACACAO RF", "MACACAO RF");
+        NATUREZA_KEYWORD_MAP.put("TUBO SIFÃO", "TUBOS");
+        NATUREZA_KEYWORD_MAP.put("CURVA TUBO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("ELEMENTO FILTRANTE", "ELEMENTO FILTRANTE");
+        NATUREZA_KEYWORD_MAP.put("MATERIAL DE PROTECAO", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("CABOS DE ACO", "CABOS DE ACO");
+        NATUREZA_KEYWORD_MAP.put("CABOS ELETRICOS", "CABOS ELETRICOS");
+        NATUREZA_KEYWORD_MAP.put("FIBRAS OTICAS", "CABOS DE FIBRAS OTICAS");
+        NATUREZA_KEYWORD_MAP.put("PARAF. ESTOJO", "PARAFUSOS");
+        NATUREZA_KEYWORD_MAP.put("PARAFUSO MÁQ", "PARAFUSOS");
+        NATUREZA_KEYWORD_MAP.put("TERMINAL CU", "MATERIAL ELETRICO");
+        NATUREZA_KEYWORD_MAP.put("PORCA P/TUB", "PORCA");
+        NATUREZA_KEYWORD_MAP.put("FITAS ADESIVAS", "FITAS");
+        NATUREZA_KEYWORD_MAP.put("ARTIGOS DE COURO", "ARTIGOS DE COUROS");
+        NATUREZA_KEYWORD_MAP.put("ELETRO-ELETRONICO", "EQUIPAMENTO ELETRONICO");
+        NATUREZA_KEYWORD_MAP.put("EQUIPAMENTO ELETRONICO", "EQUIPAMENTO ELETRONICO");
+        NATUREZA_KEYWORD_MAP.put("OLEOS COMESTIVEL", "OLEOS COMESTIVEL");
+        NATUREZA_KEYWORD_MAP.put("OLEOS LUBRIFICANTES", "LUBRIFICANTES E GRAXAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ARTIGOS DE METAL", "ARTIGOS DE METAL");
+        NATUREZA_KEYWORD_MAP.put("MAQUINA INDUSTRIAL", "MAQUINA INDUSTRIAL");
+        NATUREZA_KEYWORD_MAP.put("ANALISE CLINICA", "MATERIAL ANALISE CLINICA");
+        NATUREZA_KEYWORD_MAP.put("FONTE RADIOATIVA", "FONTE RADIOATIVA");
+        NATUREZA_KEYWORD_MAP.put("PECAS PARA AERONAVES", "PECAS PARA AERONAVES");
+        NATUREZA_KEYWORD_MAP.put("MATERIAL DE CONSTRUCAO", "MATERIAL DE CONSTRUCAO");
+        NATUREZA_KEYWORD_MAP.put("SELO MECANICO", "SELO MECANICO");
+        NATUREZA_KEYWORD_MAP.put("CHAPA DE ACO", "CHAPAS");
+        NATUREZA_KEYWORD_MAP.put("PLACA ELETRONICA", "PLACA ELETRONICA");
+        NATUREZA_KEYWORD_MAP.put("FONTE DE ALIMENTAÇÃO", "FONTE DE ALIMENTAÇÃO");
+        NATUREZA_KEYWORD_MAP.put("UTENSILIOS DOMESTICOS", "UTENSILIOS DOMESTICOS");
+        NATUREZA_KEYWORD_MAP.put("EQUIPAMENTOS MEDICOS", "EQUIPAMENTOS MEDICOS");
+        NATUREZA_KEYWORD_MAP.put("INSTRUMENTOS EM GERAL", "INSTRUMENTOS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("CAIXAS PLASTICAS", "CAIXAS PLASTICAS");
+        NATUREZA_KEYWORD_MAP.put("MACACO HIDRAULICO", "MACACO HIDRAULICO");
+        NATUREZA_KEYWORD_MAP.put("CARVAO ATIVADO", "CARVAO ATIVADO");
+        NATUREZA_KEYWORD_MAP.put("MATERIA PRIMA", "MATERIA PRIMA");
+        NATUREZA_KEYWORD_MAP.put("AR CONDICIONADO", "AR CONDICIONADO");
+        NATUREZA_KEYWORD_MAP.put("HD EXTERNO", "HD EXTERNO");
+        NATUREZA_KEYWORD_MAP.put("TROCADOR DE CALOR", "TROCADOR DE CALOR");
+        NATUREZA_KEYWORD_MAP.put("PEN DRIVE", "PEN DRIVE");
+        NATUREZA_KEYWORD_MAP.put("JOGO DE CUNHAS", "JOGO DE CUNHAS");
+        NATUREZA_KEYWORD_MAP.put("CAIXA DE PASSAGEM", "CAIXA DE PASSAGEM");
         NATUREZA_KEYWORD_MAP.put("CAIXA PASSAG", "CAIXA DE PASSAGEM");
         NATUREZA_KEYWORD_MAP.put("VÁLV.ESF", "VALVULAS");
         NATUREZA_KEYWORD_MAP.put("VÁLVULA", "VALVULAS");
         NATUREZA_KEYWORD_MAP.put("VALVULA", "VALVULAS");
+        NATUREZA_KEYWORD_MAP.put("SOLENÓIDE", "VALVULAS");
         NATUREZA_KEYWORD_MAP.put("ANEL O", "ANEL");
-        NATUREZA_KEYWORD_MAP.put("DETECTOR DE GÁS", "DETECTOR DE GAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ANEL", "ANEL");
         NATUREZA_KEYWORD_MAP.put("DETECTOR", "DETECTORES");
         NATUREZA_KEYWORD_MAP.put("TARUGO", "TARUGO MACIÇO");
+        NATUREZA_KEYWORD_MAP.put("TARUGOS", "TARUGO MACIÇO");
         NATUREZA_KEYWORD_MAP.put("UNIAO", "UNIAO DE ACO");
+        NATUREZA_KEYWORD_MAP.put("UNIÃO", "UNIAO DE ACO");
         NATUREZA_KEYWORD_MAP.put("NIPLE", "NIPLE");
         NATUREZA_KEYWORD_MAP.put("MACACAO", "MACACAO RF");
+        NATUREZA_KEYWORD_MAP.put("MACACÃO", "MACACAO RF");
         NATUREZA_KEYWORD_MAP.put("ARRUELA", "ARRUELAS");
-        NATUREZA_KEYWORD_MAP.put("CURVA TUBO", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("TUBO", "TUBOS");
         NATUREZA_KEYWORD_MAP.put("FLANGE", "FLANGE");
+        NATUREZA_KEYWORD_MAP.put("JUNT.", "JUNTAS");
         NATUREZA_KEYWORD_MAP.put("JUNTA", "JUNTAS");
         NATUREZA_KEYWORD_MAP.put("CONECTOR", "CONECTOR");
         NATUREZA_KEYWORD_MAP.put("LUVA", "LUVAS");
         NATUREZA_KEYWORD_MAP.put("PLUGUE", "PLUG");
-        NATUREZA_KEYWORD_MAP.put("ELEMENTO", "ELEMENTO FILTRANTE");
+        NATUREZA_KEYWORD_MAP.put("PLUG", "PLUG");
+        NATUREZA_KEYWORD_MAP.put("FILTRO", "FILTROS EM GERAL");
         NATUREZA_KEYWORD_MAP.put("PROTETOR", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("CINTO", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("CAPACETE", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("MASCARA", "MASCARAS");
         NATUREZA_KEYWORD_MAP.put("CABO", "CABOS EM GERAL");
         NATUREZA_KEYWORD_MAP.put("RELÉ", "RELE");
         NATUREZA_KEYWORD_MAP.put("RELE", "RELE");
+        NATUREZA_KEYWORD_MAP.put("UNIFORME", "CONFECCOES");
         NATUREZA_KEYWORD_MAP.put("CALÇA", "CONFECCOES");
         NATUREZA_KEYWORD_MAP.put("CAMISA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("JAQUETA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("PEÇAS", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("JOGO", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("RAQUETE", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("LABIRINTO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("CRUZETA", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("DISCO", "PECAS P/ MAQUINAS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("BIG BAG", "PECAS P/ MAQUINAS INDUSTRIAIS");
         NATUREZA_KEYWORD_MAP.put("LANTERNA", "LANTERNA");
         NATUREZA_KEYWORD_MAP.put("ABRAÇADEIRA", "ABRACADEIRA");
         NATUREZA_KEYWORD_MAP.put("BUJÃO", "BUJAO");
         NATUREZA_KEYWORD_MAP.put("CARTUCHO", "CARTUCHO");
-        NATUREZA_KEYWORD_MAP.put("JAQUETA", "CONFECCOES");
+        NATUREZA_KEYWORD_MAP.put("TONER", "TONER/TINTA P/ IMPRESSORA");
         NATUREZA_KEYWORD_MAP.put("JOELHO", "JOELHO");
-        NATUREZA_KEYWORD_MAP.put("KIT", "KITS");
+        NATUREZA_KEYWORD_MAP.put("KIT DE REPARO", "KITS");
         NATUREZA_KEYWORD_MAP.put("ROLAMENTO", "ROLAMENTOS");
         NATUREZA_KEYWORD_MAP.put("TAMPÃO", "TAMPAO");
-        NATUREZA_KEYWORD_MAP.put("UNIÃO", "UNIAO DE ACO");
-        NATUREZA_KEYWORD_MAP.put("MACACÃO", "MACACAO RF");
-        NATUREZA_KEYWORD_MAP.put("PARAF. ESTOJO", "PARAFUSOS");
-        NATUREZA_KEYWORD_MAP.put("PARAFUSO MÁQ", "PARAFUSOS");
         NATUREZA_KEYWORD_MAP.put("PARAF", "PARAFUSOS");
-        NATUREZA_KEYWORD_MAP.put("TERMINAL CU", "MATERIAL ELETRICO");
         NATUREZA_KEYWORD_MAP.put("TERMINAL", "MATERIAL ELETRICO");
-        NATUREZA_KEYWORD_MAP.put("PORCA P/TUB", "PORCA");
         NATUREZA_KEYWORD_MAP.put("PORCA", "PORCA");
-        NATUREZA_KEYWORD_MAP.put("TUBO SIFÃO", "TUBOS");
-        // NOVOS MAPEAMENTOS ADICIONADOS PARA REDUZIR FALHAS
-        NATUREZA_KEYWORD_MAP.put("COLAR", "CONEXÕES");
-        NATUREZA_KEYWORD_MAP.put("SOLENÓIDE", "VALVULAS");
-
+        NATUREZA_KEYWORD_MAP.put("COLAR", "CONEXOES");
+        NATUREZA_KEYWORD_MAP.put("TÊ", "CONEXOES");
+        NATUREZA_KEYWORD_MAP.put("CONEXOES", "CONEXOES");
+        NATUREZA_KEYWORD_MAP.put("MOLA", "MOLAS");
+        NATUREZA_KEYWORD_MAP.put("FITA", "FITAS");
+        NATUREZA_KEYWORD_MAP.put("ARMA", "ARMAS, ARMAMENTOS E MUNIÇÕES");
+        NATUREZA_KEYWORD_MAP.put("CALCADO", "CALCADOS");
+        NATUREZA_KEYWORD_MAP.put("SAPATO", "CALCADOS");
+        NATUREZA_KEYWORD_MAP.put("BOTA", "BOTINA");
+        NATUREZA_KEYWORD_MAP.put("BOTINA", "BOTINA");
+        NATUREZA_KEYWORD_MAP.put("CIGARRO", "CIGARROS");
+        NATUREZA_KEYWORD_MAP.put("ELETRONICO", "MATERIAL ELETRONICO");
+        NATUREZA_KEYWORD_MAP.put("MEDICAMENTO", "MEDICAMENTOS");
+        NATUREZA_KEYWORD_MAP.put("LUBRIFICANTE", "LUBRIFICANTES E GRAXAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("LUB", "LUBRIFICANTES E GRAXAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("GRAXA", "LUBRIFICANTES E GRAXAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("PNEU", "PNEUS E CAMARAS DE AR");
+        NATUREZA_KEYWORD_MAP.put("DOCUMENTO", "DOCUMENTOS");
+        NATUREZA_KEYWORD_MAP.put("HOSPITALAR", "MATERIAL HOSPITALAR");
+        NATUREZA_KEYWORD_MAP.put("LIVRO", "LIVROS");
+        NATUREZA_KEYWORD_MAP.put("MALOTE", "MALOTES");
+        NATUREZA_KEYWORD_MAP.put("INFORMATICA", "MATERIAL DE INFORMATICA");
+        NATUREZA_KEYWORD_MAP.put("REVISTA", "REVISTAS");
+        NATUREZA_KEYWORD_MAP.put("BLOQUEADOR", "BLOQUEADOR");
+        NATUREZA_KEYWORD_MAP.put("RESTOS MORTAIS", "RESTOS MORTAIS");
+        NATUREZA_KEYWORD_MAP.put("VACINA", "VACINAS");
+        NATUREZA_KEYWORD_MAP.put("AROMATIZANTE", "AROMATIZANTE");
+        NATUREZA_KEYWORD_MAP.put("HORTIFRUTI", "HORTIFRUTIGRANJEIRO");
+        NATUREZA_KEYWORD_MAP.put("CIRURGICO", "MATERIAL CIRURGICO");
+        NATUREZA_KEYWORD_MAP.put("LABORATORIO", "MATERIAL DE LABORATORIO");
+        NATUREZA_KEYWORD_MAP.put("ODONTOLOGICO", "MATERIAL ODONTOLOGICO");
+        NATUREZA_KEYWORD_MAP.put("VETERINARIO", "PRODUTOS VETERINÁRIOS");
+        NATUREZA_KEYWORD_MAP.put("COSMETICO", "COSMETICOS");
+        NATUREZA_KEYWORD_MAP.put("FARMACEUTICO", "PRODUTOS FARMACEUTICOS");
+        NATUREZA_KEYWORD_MAP.put("FLORES", "FLORES");
+        NATUREZA_KEYWORD_MAP.put("MATERIAL ESCOLAR", "MATERIAL ESCOLAR");
+        NATUREZA_KEYWORD_MAP.put("COPIADORA", "COPIADORA");
+        NATUREZA_KEYWORD_MAP.put("CORREIA", "CORREIA");
+        NATUREZA_KEYWORD_MAP.put("GERADOR", "GERADOR");
+        NATUREZA_KEYWORD_MAP.put("ELETRODO", "ELETRODOS");
+        NATUREZA_KEYWORD_MAP.put("FERRAMENTA", "FERRAMENTAS E ABRASIVOS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ALICATE", "FERRAMENTAS E ABRASIVOS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("FILME", "FILME");
+        NATUREZA_KEYWORD_MAP.put("PROJETOR", "PROJETORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("BOMBA", "BOMBAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("MOTOBOMBA", "MOTOBOMBAS");
+        NATUREZA_KEYWORD_MAP.put("GAXETA", "GAXETAS");
+        NATUREZA_KEYWORD_MAP.put("BOLSA", "BOLSAS/MALAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("MOCHILA", "MOCHILAS");
+        NATUREZA_KEYWORD_MAP.put("AGRICOLA", "IMPLEMENTOS AGRICOLAS");
+        NATUREZA_KEYWORD_MAP.put("EQUIPAMENTOS INDUSTRIAIS", "EQUIPAMENTOS INDUSTRIAIS");
+        NATUREZA_KEYWORD_MAP.put("INSTRUMENTOS MUSICAIS", "INSTRUMENTOS MUSICAIS");
+        NATUREZA_KEYWORD_MAP.put("COLA", "COLAS");
+        NATUREZA_KEYWORD_MAP.put("AERONAUTICO", "MATERIAL AERONAUTICO");
+        NATUREZA_KEYWORD_MAP.put("BEBIDA", "BEBIDA");
+        NATUREZA_KEYWORD_MAP.put("ESPORTIVO", "MATERIAL ESPORTIVO");
+        NATUREZA_KEYWORD_MAP.put("FOTOGRAFICO", "MATERIAL FOTOGRAFICO");
+        NATUREZA_KEYWORD_MAP.put("GRAFICO", "MATERIAL GRAFICO");
+        NATUREZA_KEYWORD_MAP.put("OTICO", "MATERIAL OTICO");
+        NATUREZA_KEYWORD_MAP.put("TELEFONIA", "MATERIAL PARA TELEFONIA");
+        NATUREZA_KEYWORD_MAP.put("PROMOCIONAL", "MATERIAL PROMOCIONAL");
+        NATUREZA_KEYWORD_MAP.put("ORTOPEDICO", "PRODUTOS ORTOPEDICOS");
+        NATUREZA_KEYWORD_MAP.put("MOVEIS", "MOVEIS");
+        NATUREZA_KEYWORD_MAP.put("ACETATO DE ETILA", "PRODUTOS QUIMICOS");
+        NATUREZA_KEYWORD_MAP.put("PRODUTOS QUIMICOS", "PRODUTOS QUIMICOS");
+        NATUREZA_KEYWORD_MAP.put("MANGUEIRA", "MANGUEIRA");
+        NATUREZA_KEYWORD_MAP.put("SELO", "SELO MECANICO");
+        NATUREZA_KEYWORD_MAP.put("TINTA", "TINTAS");
+        NATUREZA_KEYWORD_MAP.put("PINTURA", "TINTAS");
+        NATUREZA_KEYWORD_MAP.put("TURBINA", "TURBINA");
+        NATUREZA_KEYWORD_MAP.put("LAMPADA", "LAMPADAS");
+        NATUREZA_KEYWORD_MAP.put("VIDRO", "VIDRO");
+        NATUREZA_KEYWORD_MAP.put("BELEZA", "PRODUTO DE BELEZA");
+        NATUREZA_KEYWORD_MAP.put("CATALOGO", "CATALOGO");
+        NATUREZA_KEYWORD_MAP.put("RELOGIO", "RELOGIO DE PONTO EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("AUTOMOTIVAS", "PECAS AUTOMOTIVAS");
+        NATUREZA_KEYWORD_MAP.put("FERTILIZANTE", "FERTILIZANTE");
+        NATUREZA_KEYWORD_MAP.put("MOSTRUARIO", "MOSTRUARIO");
+        NATUREZA_KEYWORD_MAP.put("ARTESANATO", "ARTESANATO");
+        NATUREZA_KEYWORD_MAP.put("MEDICAO", "INSTRUMENTO DE MEDICAO");
+        NATUREZA_KEYWORD_MAP.put("MOTOR", "MOTORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ILUMINACAO", "ILUMINACAO");
+        NATUREZA_KEYWORD_MAP.put("LUMINARIA", "LUMINARIAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("LUSTRE", "LUSTRE");
+        NATUREZA_KEYWORD_MAP.put("RETENTOR", "RETENTORES");
+        NATUREZA_KEYWORD_MAP.put("IMPRESSOS", "IMPRESSOS");
+        NATUREZA_KEYWORD_MAP.put("BRINDE", "BRINDES/PRESENTES E BRINQUEDOS");
+        NATUREZA_KEYWORD_MAP.put("RODIZIO", "RODIZIOS");
+        NATUREZA_KEYWORD_MAP.put("TECIDO", "TECIDOS");
+        NATUREZA_KEYWORD_MAP.put("ETIQUETA", "ETIQUETAS E ROTULOS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ROTULO", "ETIQUETAS E ROTULOS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("DGR", "DGR");
+        NATUREZA_KEYWORD_MAP.put("CHAPA", "CHAPAS");
+        NATUREZA_KEYWORD_MAP.put("TANQUE", "TANQUES");
+        NATUREZA_KEYWORD_MAP.put("BALANCA", "BALANCA");
+        NATUREZA_KEYWORD_MAP.put("GAS", "GAS");
+        NATUREZA_KEYWORD_MAP.put("PLASTICO", "MATERIAL PLASTICOS");
+        NATUREZA_KEYWORD_MAP.put("POLIMERO", "POLIMEROS");
+        NATUREZA_KEYWORD_MAP.put("AQUECEDOR", "AQUECEDORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("HIGIENE", "PROD. DE HIGIENE");
+        NATUREZA_KEYWORD_MAP.put("ESCRITORIO", "MATERIAL DE ESCRITORIO");
+        NATUREZA_KEYWORD_MAP.put("EMBALAGEM", "EMBALAGENS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("DECORACAO", "ARTIGOS PARA DECORACAO");
+        NATUREZA_KEYWORD_MAP.put("SINALIZADOR", "PLACAS SINALIZADORAS");
+        NATUREZA_KEYWORD_MAP.put("PLACA", "PLACAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("CAMERA", "CAMERAS FOTOGRAFICAS/TERMOGRAFICAS");
+        NATUREZA_KEYWORD_MAP.put("ARMARIO", "ARMARIOS");
+        NATUREZA_KEYWORD_MAP.put("AGROPECUARIO", "PRODUTOS AGROPECUARIOS");
+        NATUREZA_KEYWORD_MAP.put("CAMA/MESA/BANHO", "CAMA/MESA/BANHO");
+        NATUREZA_KEYWORD_MAP.put("RESINA", "RESINAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("IMPRESSORA", "IMPRESSORAS E ACESSORIOS");
+        NATUREZA_KEYWORD_MAP.put("PAINEL", "PAINEL");
+        NATUREZA_KEYWORD_MAP.put("BATERIA", "BATERIAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("CILINDRO", "CILINDROS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("BORRACHA", "PRODUTOS DE BORRACHA");
+        NATUREZA_KEYWORD_MAP.put("CORRENTE", "CORRENTES");
+        NATUREZA_KEYWORD_MAP.put("COMPRESSOR", "COMPRESSORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("RADIO", "RADIO");
+        NATUREZA_KEYWORD_MAP.put("ROUTER", "ROTEADOR");
+        NATUREZA_KEYWORD_MAP.put("NOBREAK", "NOBREAK");
+        NATUREZA_KEYWORD_MAP.put("GPS", "GPS");
+        NATUREZA_KEYWORD_MAP.put("MOTO PECAS", "MOTO PECAS");
+        NATUREZA_KEYWORD_MAP.put("CATALISADOR", "CATALISADOR");
+        NATUREZA_KEYWORD_MAP.put("TELA", "TELAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("GELO SECO", "GELO SECO");
+        NATUREZA_KEYWORD_MAP.put("GELO REUTILIZAVEL", "GELO REUTILIZAVEL");
+        NATUREZA_KEYWORD_MAP.put("PAPELARIA", "PAPELARIA EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("SACO", "SACOS E SACOLAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("EIXO", "EIXO");
+        NATUREZA_KEYWORD_MAP.put("MEDIDOR", "MEDIDOR");
+        NATUREZA_KEYWORD_MAP.put("FONTE", "FONTE DE ALIMENTAÇÃO");
+        NATUREZA_KEYWORD_MAP.put("MANOMETRO", "MANOMETROS");
+        NATUREZA_KEYWORD_MAP.put("PAPEL", "PAPEL EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ROLETE", "ROLETE");
+        NATUREZA_KEYWORD_MAP.put("LONA", "LONAS");
+        NATUREZA_KEYWORD_MAP.put("FORNO", "FORNO");
+        NATUREZA_KEYWORD_MAP.put("TAMBOR", "TAMBOR");
+        NATUREZA_KEYWORD_MAP.put("TERMOPAR", "TERMOPAR");
+        NATUREZA_KEYWORD_MAP.put("REFRIGERACAO", "MATERIAL DE REFRIGERACAO");
+        NATUREZA_KEYWORD_MAP.put("ESSENCIA", "ESSENCIAS");
+        NATUREZA_KEYWORD_MAP.put("ENVELOPE", "ENVELOPES");
+        NATUREZA_KEYWORD_MAP.put("NOTEBOOK", "NOTEBOOK");
+        NATUREZA_KEYWORD_MAP.put("LAPTOP", "NOTEBOOK");
+        NATUREZA_KEYWORD_MAP.put("ROBO", "ROBO");
+        NATUREZA_KEYWORD_MAP.put("ENGRENAGEM", "ENGRENAGENS");
+        NATUREZA_KEYWORD_MAP.put("CORDA", "CORDAS EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("OCULOS", "OCULOS");
+        NATUREZA_KEYWORD_MAP.put("PISO", "PISO");
+        NATUREZA_KEYWORD_MAP.put("PERECIVEL", "PERECIVEL");
+        NATUREZA_KEYWORD_MAP.put("COMPONENTE", "COMPONENTES");
+        NATUREZA_KEYWORD_MAP.put("ROTOR", "ROTOR");
+        NATUREZA_KEYWORD_MAP.put("ETANOL", "ETANOL");
+        NATUREZA_KEYWORD_MAP.put("SANGUE", "SANGUE");
+        NATUREZA_KEYWORD_MAP.put("SEMENTE", "SEMENTES");
+        NATUREZA_KEYWORD_MAP.put("CELULAR", "CELULAR");
+        NATUREZA_KEYWORD_MAP.put("DESCARTAVEL", "MATERIAL DESCARTAVEL");
+        NATUREZA_KEYWORD_MAP.put("TAPETE", "TAPETES");
+        NATUREZA_KEYWORD_MAP.put("REDUTOR", "REDUTOR");
+        NATUREZA_KEYWORD_MAP.put("SILICONE", "SILICONE");
+        NATUREZA_KEYWORD_MAP.put("EXPOSITOR", "EXPOSITORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("TELEVISAO", "TELEVISAO");
+        NATUREZA_KEYWORD_MAP.put("TV", "TELEVISAO");
+        NATUREZA_KEYWORD_MAP.put("MONITOR", "MONITORES");
+        NATUREZA_KEYWORD_MAP.put("BOMBONA", "BOMBONAS");
+        NATUREZA_KEYWORD_MAP.put("TERMOMETRO", "TERMOMETRO");
+        NATUREZA_KEYWORD_MAP.put("CONVERSOR", "CONVERSOR");
+        NATUREZA_KEYWORD_MAP.put("ATUADOR", "ATUADOR");
+        NATUREZA_KEYWORD_MAP.put("MODEM", "MODEM");
+        NATUREZA_KEYWORD_MAP.put("REGULADOR", "REGULADOR");
+        NATUREZA_KEYWORD_MAP.put("FUSIVEL", "FUSIVEL");
+        NATUREZA_KEYWORD_MAP.put("FUSí", "FUSIVEL");
+        NATUREZA_KEYWORD_MAP.put("SENSOR", "SENSOR");
+        NATUREZA_KEYWORD_MAP.put("CABEÇOTE", "CABEÇOTE");
+        NATUREZA_KEYWORD_MAP.put("DESKTOP", "COMPUTADOR");
+        NATUREZA_KEYWORD_MAP.put("COMPUTADOR", "COMPUTADOR");
+        NATUREZA_KEYWORD_MAP.put("CHAVE", "CHAVES");
+        NATUREZA_KEYWORD_MAP.put("SERVIDOR", "SERVIDOR");
+        NATUREZA_KEYWORD_MAP.put("REATOR", "REATOR");
+        NATUREZA_KEYWORD_MAP.put("PISTAO", "PISTAO");
+        NATUREZA_KEYWORD_MAP.put("COLCHAO", "COLCHAO");
+        NATUREZA_KEYWORD_MAP.put("LENTE", "LENTES");
+        NATUREZA_KEYWORD_MAP.put("GASOLINA", "GASOLINA");
+        NATUREZA_KEYWORD_MAP.put("CUNHA", "JOGO DE CUNHAS");
+        NATUREZA_KEYWORD_MAP.put("CARREGADOR", "CARREGADORES");
+        NATUREZA_KEYWORD_MAP.put("TESTADOR", "TESTADOR");
+        NATUREZA_KEYWORD_MAP.put("LIMPEZA", "PRODUTO DE LIMPEZA");
+        NATUREZA_KEYWORD_MAP.put("TALHA", "TALHA");
+        NATUREZA_KEYWORD_MAP.put("CIMENTO", "CIMENTO");
+        NATUREZA_KEYWORD_MAP.put("DOBRADICA", "DOBRADICA");
+        NATUREZA_KEYWORD_MAP.put("POLIA", "POLIA");
+        NATUREZA_KEYWORD_MAP.put("PRESSOSTATO", "PRESSOSTATO");
+        NATUREZA_KEYWORD_MAP.put("FREEZER", "REFRIGERADOR");
+        NATUREZA_KEYWORD_MAP.put("REFRIGERADOR", "REFRIGERADOR");
+        NATUREZA_KEYWORD_MAP.put("VASILHAME", "VASILHAMES VAZIOS");
+        NATUREZA_KEYWORD_MAP.put("LUPA", "LUPA");
+        NATUREZA_KEYWORD_MAP.put("JOIA", "JOIAS");
+        NATUREZA_KEYWORD_MAP.put("RETIFICADOR", "RETIFICADOR");
+        NATUREZA_KEYWORD_MAP.put("COFRE", "COFRE");
+        NATUREZA_KEYWORD_MAP.put("WEBCAM", "WEBCAM");
+        NATUREZA_KEYWORD_MAP.put("CADEIRA", "CADEIRAS");
+        NATUREZA_KEYWORD_MAP.put("FIREWALL", "FIREWALL");
+        NATUREZA_KEYWORD_MAP.put("SECADOR", "SECADOR");
+        NATUREZA_KEYWORD_MAP.put("TRANSFORMADOR", "TRANSFORMADOR");
+        NATUREZA_KEYWORD_MAP.put("EMPILHADEIRA", "EMPILHADEIRA");
+        NATUREZA_KEYWORD_MAP.put("EQUIPAMENTO", "EQUIPAMENTOS");
+        NATUREZA_KEYWORD_MAP.put("TRANSCEIVER", "TRANSCEIVER");
+        NATUREZA_KEYWORD_MAP.put("TABLET", "TABLET");
+        NATUREZA_KEYWORD_MAP.put("EXAUSTOR", "EXAUSTOR");
+        NATUREZA_KEYWORD_MAP.put("MOTO", "MOTO");
+        NATUREZA_KEYWORD_MAP.put("ASPIRADOR", "ASPIRADORES EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("ESTUFA", "ESTUFA");
+        NATUREZA_KEYWORD_MAP.put("INTERRUPTOR", "INTERRUPTOR");
+        NATUREZA_KEYWORD_MAP.put("MULTIMETRO", "MULTIMETRO");
+        NATUREZA_KEYWORD_MAP.put("EXTINTOR", "EXTINTOR");
+        NATUREZA_KEYWORD_MAP.put("PENDRIVE", "PEN DRIVE");
+        NATUREZA_KEYWORD_MAP.put("PROCESSADOR", "PROCESSADOR");
+        NATUREZA_KEYWORD_MAP.put("DIAFRAGMA", "DIAFRAGMA");
+        NATUREZA_KEYWORD_MAP.put("CADEADO", "CADEADOS");
+        NATUREZA_KEYWORD_MAP.put("DVD", "MIDIAS CD/DVD");
+        NATUREZA_KEYWORD_MAP.put("CD", "MIDIAS CD/DVD");
+        NATUREZA_KEYWORD_MAP.put("GEL", "GEL");
+        NATUREZA_KEYWORD_MAP.put("HELICE", "HELICE");
+        NATUREZA_KEYWORD_MAP.put("LEITOR", "LEITORES DE DOCUMENTO");
+        NATUREZA_KEYWORD_MAP.put("FURADEIRA", "FURADEIRA");
+        NATUREZA_KEYWORD_MAP.put("BOTE", "BOTE");
+        NATUREZA_KEYWORD_MAP.put("PRENSA", "PRENSA");
+        NATUREZA_KEYWORD_MAP.put("PILHA", "PILHA");
+        NATUREZA_KEYWORD_MAP.put("CONTATOR", "CONTATOR");
+        NATUREZA_KEYWORD_MAP.put("BICICLETA", "BICICLETA");
+        NATUREZA_KEYWORD_MAP.put("PANO", "PANO");
+        NATUREZA_KEYWORD_MAP.put("ANTENA", "ANTENA");
+        NATUREZA_KEYWORD_MAP.put("ALCOOL", "ALCOOL");
+        NATUREZA_KEYWORD_MAP.put("CHIP", "CHIP");
+        NATUREZA_KEYWORD_MAP.put("COMBUSTIVEL", "COMBUSTIVEL");
+        NATUREZA_KEYWORD_MAP.put("AGUA", "AGUA");
+        NATUREZA_KEYWORD_MAP.put("ACOPLAMENTO", "ACOPLAMENTO");
+        NATUREZA_KEYWORD_MAP.put("ANALISADOR", "ANALISADOR");
+        NATUREZA_KEYWORD_MAP.put("AMORTECEDOR", "AMORTECEDOR");
+        NATUREZA_KEYWORD_MAP.put("TERMOSTATO", "TERMOSTATO");
+        NATUREZA_KEYWORD_MAP.put("AMOSTRA", "AMOSTRAS");
+        NATUREZA_KEYWORD_MAP.put("BIJUTERIA", "BIJUTERIAS");
+        NATUREZA_KEYWORD_MAP.put("ALIMENTICIO", "PRODUTOS ALIMENTICIOS");
+        NATUREZA_KEYWORD_MAP.put("AMPLIFICADOR", "AMPLIFICADOR");
+        NATUREZA_KEYWORD_MAP.put("DIVERSOS", "DIVERSOS");
+        NATUREZA_KEYWORD_MAP.put("ACESSORIO", "ACESSORIOS");
+        NATUREZA_KEYWORD_MAP.put("BOBINA", "BOBINA EM GERAL");
+        NATUREZA_KEYWORD_MAP.put("BUCHA", "BUCHA");
+        NATUREZA_KEYWORD_MAP.put("EPI", "EQUIPAMENTO DE SEGURANCA");
+        NATUREZA_KEYWORD_MAP.put("KIT", "KITS");
+        NATUREZA_KEYWORD_MAP.put("T", "CONEXOES");
+        NATUREZA_KEYWORD_MAP.put("LED", "ILUMINACAO");
     }
+
     private static final Map<String, String> PESSOA_ALIAS_MAP;
     static {
         PESSOA_ALIAS_MAP = new HashMap<>();
@@ -109,6 +495,62 @@ public class SqlServerRepository {
         PESSOA_ALIAS_MAP.put("AEROPORTO GALEAO", "LIDER SIGNATURE S/A - GALEAO");
         PESSOA_ALIAS_MAP.put("WHITE MARTINS GASES INDUSTRIAIS LTDA - VINHEDO SP", "WHITE MARTINS");
     }
+
+    private static final Map<String, String> EMBALAGEM_KEYWORD_MAP;
+    static {
+        EMBALAGEM_KEYWORD_MAP = new LinkedHashMap<>();
+        EMBALAGEM_KEYWORD_MAP.put("ENGRADADO DE FERRO", "ENGRADADO DE FERRO"); // ID 10
+        EMBALAGEM_KEYWORD_MAP.put("ENGRADADO DE MANDEIRA", "ENGRADADO DE MANDEIRA"); // ID 13
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA DE ISOPOR", "CAIXA DE ISOPOR"); // ID 1
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA PAPELAO", "CAIXA PAPELAO"); // ID 2
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA PLASTICA", "CAIXA PLASTICA"); // ID 3
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA MADEIRA", "CAIXA MADEIRA"); // ID 6
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA METALICA", "CAIXA METALICA"); // ID 36
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA METÁLICA", "CAIXA METALICA"); // ID 46
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA FIBRA", "CAIXA FIBRA"); // ID 49
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA PAP/MADEIRA", "CAIXA PAP/MADEIRA"); // ID 33
+        EMBALAGEM_KEYWORD_MAP.put("SACO COLETOR", "SACO COLETOR"); // ID 5
+        EMBALAGEM_KEYWORD_MAP.put("MALAS/MALETAS", "MALAS/MALETAS"); // ID 27
+        EMBALAGEM_KEYWORD_MAP.put("GALOES EM GERAL", "GALOES EM GERAL"); // ID 40
+        EMBALAGEM_KEYWORD_MAP.put("ISOPOR", "CAIXA DE ISOPOR"); // ID 1
+        EMBALAGEM_KEYWORD_MAP.put("PAPELAO", "CAIXA PAPELAO"); // ID 2
+        EMBALAGEM_KEYWORD_MAP.put("PAP/MADEIRA", "CAIXA PAP/MADEIRA"); // ID 33
+        EMBALAGEM_KEYWORD_MAP.put("PLASTICA", "CAIXA PLASTICA"); // ID 3
+        EMBALAGEM_KEYWORD_MAP.put("MADEIRA", "CAIXA MADEIRA"); // ID 6
+        EMBALAGEM_KEYWORD_MAP.put("METALICA", "CAIXA METALICA"); // ID 36
+        EMBALAGEM_KEYWORD_MAP.put("FIBRA", "CAIXA FIBRA"); // ID 49
+        EMBALAGEM_KEYWORD_MAP.put("ENGRADADO", "ENGRADADO DE MANDEIRA"); // ID 13
+        EMBALAGEM_KEYWORD_MAP.put("PECAS", "PECAS"); // ID 11
+        EMBALAGEM_KEYWORD_MAP.put("BOMBONA", "BOMBONA"); // ID 16
+        EMBALAGEM_KEYWORD_MAP.put("BALDE", "BALDES"); // ID 17
+        EMBALAGEM_KEYWORD_MAP.put("TAMBOR", "TAMBOR"); // ID 18
+        EMBALAGEM_KEYWORD_MAP.put("PACOTE", "PACOTES"); // ID 26
+        EMBALAGEM_KEYWORD_MAP.put("MALOTE", "MALOTE"); // ID 20
+        EMBALAGEM_KEYWORD_MAP.put("MALA", "MALAS/MALETAS"); // ID 27
+        EMBALAGEM_KEYWORD_MAP.put("MALETA", "MALAS/MALETAS"); // ID 27
+        EMBALAGEM_KEYWORD_MAP.put("BOBINA", "BOBINAS"); // ID 47
+        EMBALAGEM_KEYWORD_MAP.put("GRANEL", "A GRANEL"); // ID 23
+        EMBALAGEM_KEYWORD_MAP.put("FARDO", "FARDOS"); // ID 24
+        EMBALAGEM_KEYWORD_MAP.put("ROLO", "ROLOS"); // ID 28
+        EMBALAGEM_KEYWORD_MAP.put("GAIOLA", "GAIOLA"); // ID 30
+        EMBALAGEM_KEYWORD_MAP.put("GALAO", "GALOES EM GERAL"); // ID 40
+        EMBALAGEM_KEYWORD_MAP.put("GALÕES", "GALOES EM GERAL"); // ID 40
+        EMBALAGEM_KEYWORD_MAP.put("TUBO", "TUBOS"); // ID 42
+        EMBALAGEM_KEYWORD_MAP.put("CHAPA", "CHAPAS"); // ID 43
+        EMBALAGEM_KEYWORD_MAP.put("BARRICA", "BARRICAS"); // ID 44
+        EMBALAGEM_KEYWORD_MAP.put("BARRA", "BARRA"); // ID 45
+        EMBALAGEM_KEYWORD_MAP.put("CACAMBA", "CACAMBA"); // ID 48
+        EMBALAGEM_KEYWORD_MAP.put("TARUGO", "TARUGOS"); // ID 50
+        EMBALAGEM_KEYWORD_MAP.put("AMARRADO", "AMARRADO"); // ID 14
+        EMBALAGEM_KEYWORD_MAP.put("ENCAPADO", "ENCAPADOS"); // ID 25
+        EMBALAGEM_KEYWORD_MAP.put("SACO", "SACOS"); // ID 35
+        EMBALAGEM_KEYWORD_MAP.put("ENVELOPE", "ENVELOPE"); // ID 7
+        EMBALAGEM_KEYWORD_MAP.put("LATA", "LATAS"); // ID 8
+        EMBALAGEM_KEYWORD_MAP.put("PALLET", "PALLET"); // ID 9
+        EMBALAGEM_KEYWORD_MAP.put("CONTAINER", "CONTAINER"); // ID 15
+        EMBALAGEM_KEYWORD_MAP.put("CAIXA", "CAIXA PAP/MADEIRA"); // ID 33 (Fallback do seu código original)
+    }
+
     public SqlServerRepository(@Qualifier("sqlServerJdbcTemplate") JdbcTemplate jdbc, AppProperties appProperties) {
         this.jdbc = jdbc;
         this.appProperties = appProperties;
@@ -133,16 +575,23 @@ public class SqlServerRepository {
     }
 
     public void preencherDadosFaltantes(SalvaColetaModel model) {
+
         model.setIdRemetente(findPessoaId(model.getDsRemetente(), model.getCdRemetenteCnpj()));
         model.setIdDestinatario(findPessoaId(model.getDsDestinatario(), model.getCdDestinatarioCnpj()));
         model.setIdTomador(findPessoaId(model.getDsTomador(), model.getCdTomadorCnpj()));
+
         if (model.getIdLocalColeta() == null) {
             model.setIdLocalColeta(model.getIdRemetente());
         }
-        model.setIdAgente(findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail()));
+
+        if (model.getIdEnderecoCidade() == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
+             model.setIdEnderecoCidade(findCidadeIdByName(model.getDsCidadeColeta()));
+        }
+        model.setIdAgente(findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail()));        
         model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
-        model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem()));
+        model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem())); 
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
+
         if (model.getIdRemetente() != null && (model.getIdEmbalagem() == null || model.getIdNaturezaCarga() == null)) {
             try {
                 String sql = "SELECT id_Embalagem, id_NaturezaMercadoria FROM tbdRemetente WHERE id_Remetente = ?";
@@ -161,50 +610,90 @@ public class SqlServerRepository {
 
     private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
         if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) {
+            log.warn("Nenhum nome ou email fornecido para buscar o Agente.");
             return null;
         }
-        String sql = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p INNER JOIN tbdAgente a ON p.id_Pessoa = a.id_Agente WHERE ISNULL(a.tp_InativoErrado, 'N') <> 'S' AND (";
+
+        String siglaBusca = null;
+        String nomeCompleto = nome;
+        String nomeApenas = nome;    
+
+        if (nome != null && nome.contains(" - ")) {
+            try {
+                String[] parts = nome.split(" - ", 2);
+                siglaBusca = parts[0].trim();
+                nomeApenas = parts[1].trim();
+                log.info("Input do Agente '{}' foi dividido em Sigla/Cidade/UF '{}' e Nome '{}'", nomeCompleto, siglaBusca, nomeApenas);
+            } catch (Exception e) {
+                log.warn("Falha ao tentar dividir o nome do agente '{}'. Usando o nome completo para todas as buscas.", nomeCompleto);
+                siglaBusca = null;
+                nomeApenas = nomeCompleto; 
+            }
+        }
+
+        String sql = """
+            SELECT TOP 1 p.id_Pessoa
+            FROM tbdPessoa p
+            LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade
+            WHERE 
+            """;
+
         StringBuilder whereClause = new StringBuilder();
         List<Object> params = new ArrayList<>();
+
         if (email != null && !email.isBlank()) {
-            whereClause.append("LOWER(p.cd_Email) = ?");
+            whereClause.append("(LOWER(p.cd_Email) = ?)");
             params.add(email.toLowerCase());
         }
-        if (nome != null && !nome.isBlank()) {
-            if (!whereClause.isEmpty()) {
-                whereClause.append(" OR ");
-            }
-            whereClause.append("LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?");
-            params.add("%" + nome.toLowerCase() + "%");
+
+        if (nomeApenas != null && !nomeApenas.isBlank()) {
+            if (!whereClause.isEmpty()) whereClause.append(" OR ");
+            whereClause.append("(LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?)");
+            params.add("%" + nomeApenas.toLowerCase() + "%"); 
         }
+        
+        if (nomeCompleto != null && !nomeCompleto.isBlank() && !nomeCompleto.equals(nomeApenas)) {
+             if (!whereClause.isEmpty()) whereClause.append(" OR ");
+             whereClause.append("(LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?)");
+             params.add("%" + nomeCompleto.toLowerCase() + "%"); 
+        }
+        
+        if (siglaBusca != null && !siglaBusca.isBlank()) {
+            if (!whereClause.isEmpty()) whereClause.append(" OR ");
+            
+            whereClause.append("(LOWER(c.cd_Sigla) = ?)");
+            params.add(siglaBusca.toLowerCase());
+            whereClause.append(" OR (LOWER(c.ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?)");
+            params.add("%" + siglaBusca.toLowerCase() + "%");
+            
+            if (siglaBusca.length() == 2) {
+                whereClause.append(" OR (LOWER(c.cd_UF) = ?)");
+                params.add(siglaBusca.toLowerCase());
+            }
+        }
+
         if (params.isEmpty()) {
+            log.warn("Nenhum critério de busca válido para o agente (nome='{}', email='{}')", nomeCompleto, email);
             return null;
         }
-        String finalSql = sql + whereClause.toString() + ")";
+
+        String finalSql = sql + " (" + whereClause.toString() + ")";
+        
         try {
             Integer id = jdbc.queryForObject(finalSql, Integer.class, params.toArray());
-            log.info("ID do Agente encontrado: {} (busca por nome='{}' ou email='{}')", id, nome, email);
+            log.info("ID do Agente (Pessoa) encontrado com busca complexa: {} (busca por nome='{}', email='{}', sigla='{}')", id, nomeCompleto, email, siglaBusca);
             return id;
         } catch (EmptyResultDataAccessException e) {
+            log.warn("Nenhum Agente (Pessoa) encontrado com busca complexa para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
+            return null;
+        } catch (Exception e) {
+            log.error("Erro ao executar busca complexa de Agente: {}", e.getMessage(), e);
             return null;
         }
     }
-
     private Integer findPessoaId(String nome, String cnpj) {
         if ((nome == null || nome.isBlank()) && (cnpj == null || cnpj.isBlank())) {
             return null;
-        }
-
-        if (cnpj != null && !cnpj.isBlank()) {
-            try {
-                String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
-                String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
-                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
-                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
-                return id;
-            } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Prosseguindo para buscar pelo nome '{}'.", cnpj, nome);
-            }
         }
 
         if (nome != null && !nome.isBlank()) {
@@ -215,37 +704,61 @@ public class SqlServerRepository {
                 nomeBusca = nomeTraduzido;
             }
 
+            String sqlNome = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE (LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)";
+            List<Object> params = new ArrayList<>();
+            params.add("%" + nomeBusca.toLowerCase() + "%");
+            params.add("%" + nomeBusca.toLowerCase() + "%");
+
             try {
-                String sqlNome = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE (LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)";
-                String termoBusca = "%" + nomeBusca.toLowerCase() + "%";
-                Integer id = jdbc.queryForObject(sqlNome, Integer.class, termoBusca, termoBusca);
-                log.info("ID de Pessoa encontrado via Nome: {} (para nome='{}')", id, nome);
+                Integer id = jdbc.queryForObject(sqlNome, Integer.class, params.toArray());
+                log.info("ID de Pessoa encontrado via Nome/Apelido: {} (para nome='{}')", id, nome);
                 return id;
             } catch (EmptyResultDataAccessException e) {
-                log.warn("Não foi possível encontrar um ID de Pessoa para nome='{}' (após falha na busca por CNPJ, se aplicável).", nome);
+                log.warn("Nenhuma Pessoa encontrada para o Nome/Apelido '{}'. Prosseguindo para buscar pelo CNPJ.", nome);
             }
         }
 
+        if (cnpj != null && !cnpj.isBlank()) {
+            try {
+                String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
+                String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
+                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
+                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}' (após falha na busca por nome, se aplicável).", cnpj);
+            }
+        }
+
+        log.error("Não foi possível encontrar um ID de Pessoa para nome='{}' ou cnpj='{}'", nome, cnpj);
         return null;
     }
 
     private Integer findEmbalagemIdComDePara(String nomeOrigem) {
         if (nomeOrigem == null || nomeOrigem.isBlank()) return null;
 
-        String nomeDestino = nomeOrigem;
-        try {
-            String deParaSql = "SELECT ds_nome_destino_sqlserver FROM tbd_de_para_embalagem WHERE ds_nome_origem_postgres = ?";
-            nomeDestino = jdbc.queryForObject(deParaSql, String.class, nomeOrigem);
-            log.info("Mapeamento De-Para encontrado para embalagem '{}' -> '{}'", nomeOrigem, nomeDestino);
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi encontrado mapeamento 'De-Para' para a embalagem de origem '{}'.", nomeOrigem);
+        String nomeDestino = nomeOrigem; 
+        String nomeOrigemUpper = nomeOrigem.toUpperCase();
+        for (Map.Entry<String, String> entry : EMBALAGEM_KEYWORD_MAP.entrySet()) {
+            if (nomeOrigemUpper.contains(entry.getKey())) {
+                nomeDestino = entry.getValue();
+                log.info("Mapeamento por palavra-chave encontrado para embalagem '{}' -> '{}'", nomeOrigem, nomeDestino);
+                break;
+            }
+        }
+
+        if (nomeDestino.equals(nomeOrigem)) {
+             log.warn("Não foi encontrado mapeamento por palavra-chave para a embalagem '{}'. Usando o nome original para a busca.", nomeOrigem);
         }
 
         try {
             String sql = "SELECT TOP 1 id_Embalagem FROM tbdEmbalagem WHERE LOWER(ds_Embalagem) COLLATE Latin1_General_CI_AI LIKE ?";
             return jdbc.queryForObject(sql, Integer.class, "%" + nomeDestino.toLowerCase() + "%");
         } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID para a Embalagem contendo '{}'.", nomeDestino);
+            log.warn("Não foi possível encontrar um ID para a Embalagem contendo '{}' (após tentativa de mapeamento por keyword).", nomeDestino);
+            return null;
+        } catch (Exception e) {
+            log.error("Erro ao buscar ID de Embalagem para '{}': {}", nomeDestino, e.getMessage(), e);
             return null;
         }
     }
@@ -254,32 +767,25 @@ public class SqlServerRepository {
         if (nomeOrigem == null || nomeOrigem.isBlank()) return null;
 
         String nomeDestino = nomeOrigem;
-        boolean deParaEncontrado = false;
-        try {
-            String deParaSql = "SELECT ds_nome_destino_sqlserver FROM tbd_de_para_natureza WHERE ds_nome_origem_postgres = ?";
-            nomeDestino = jdbc.queryForObject(deParaSql, String.class, nomeOrigem);
-            log.info("Mapeamento De-Para encontrado para natureza '{}' -> '{}'", nomeOrigem, nomeDestino);
-            deParaEncontrado = true;
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi encontrado mapeamento 'De-Para' para a natureza '{}'. Tentando mapeamento por palavra-chave.", nomeOrigem);
+
+        String nomeOrigemUpper = nomeOrigem.toUpperCase();
+        for (Map.Entry<String, String> entry : NATUREZA_KEYWORD_MAP.entrySet()) {
+            if (nomeOrigemUpper.contains(entry.getKey())) {
+                nomeDestino = entry.getValue();
+                log.info("Mapeamento por palavra-chave encontrado para natureza '{}' -> '{}'", nomeOrigem, nomeDestino);
+                break; 
+            }
         }
         
-        if (!deParaEncontrado) {
-            String nomeOrigemUpper = nomeOrigem.toUpperCase();
-            for (Map.Entry<String, String> entry : NATUREZA_KEYWORD_MAP.entrySet()) {
-                if (nomeOrigemUpper.contains(entry.getKey())) {
-                    nomeDestino = entry.getValue();
-                    log.info("Mapeamento por palavra-chave encontrado para natureza '{}' -> '{}'", nomeOrigem, nomeDestino);
-                    break; 
-                }
-            }
+        if (nomeDestino.equals(nomeOrigem)) {
+             log.warn("Não foi encontrado mapeamento por palavra-chave para a natureza '{}'. Usando o nome original para a busca.", nomeOrigem);
         }
 
         try {
             String sql = "SELECT TOP 1 id_NaturezaMercadoria FROM tbdNaturezaMercadoria WHERE LOWER(ds_NaturezaMercadoria) COLLATE Latin1_General_CI_AI LIKE ?";
             return jdbc.queryForObject(sql, Integer.class, "%" + nomeDestino.toLowerCase() + "%");
         } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID para a Natureza da Carga contendo '{}'.", nomeDestino);
+            log.warn("Não foi possível encontrar um ID para a Natureza da Carga contendo '{}' (após tentativa de mapeamento por keyword).", nomeDestino);
             return null;
         }
     }
@@ -301,6 +807,29 @@ public class SqlServerRepository {
         }
     }
 
+    private Integer findCidadeIdByName(String cityName) {
+        if (cityName == null || cityName.isBlank()) {
+            return null;
+        }
+        String trimmedCityName = cityName.trim();
+        if (trimmedCityName.isEmpty()) {
+            return null;
+        }
+
+        String sql = "SELECT TOP 1 id_Cidade FROM tbdCidade WHERE LOWER(ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?";
+        try {
+            Integer id = jdbc.queryForObject(sql, Integer.class, trimmedCityName.toLowerCase() + "%");
+            log.info("ID de Cidade encontrado via Nome: {} (para nome='{}')", id, cityName);
+            return id;
+        } catch (EmptyResultDataAccessException e) {
+            log.warn("Nenhuma Cidade encontrada para o nome '{}' na tbdCidade.", cityName);
+            return null;
+        } catch (Exception e) {
+            log.error("Erro ao buscar ID de Cidade pelo nome '{}' na tbdCidade: {}", cityName, e.getMessage(), e);
+            return null;
+        }
+    }
+
     private void fillDefaultsIfNull(SalvaColetaModel model) {
         if (model.getIdRemetente() == null) model.setIdRemetente(appProperties.getDefaults().getIdRemetente());
         if (model.getIdDestinatario() == null) model.setIdDestinatario(appProperties.getDefaults().getIdDestinatario());
@@ -313,13 +842,37 @@ public class SqlServerRepository {
         if (model.getIdNaturezaCarga() == null) {
                 log.warn("DTM {}: ID da Natureza da Carga não foi encontrado. Aplicando natureza genérica de fallback (ID: 1400).", model.getIdDtm());
                 model.setIdNaturezaCarga(1400); 
-            }        if (model.getIdEmbalagem() == null) log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado.", model.getIdDtm());
-
-        if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
-            model.setHrColetaFim(appProperties.getDefaults().getHrFim());
+            }
+        if (model.getIdEmbalagem() == null) {
+            log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado. Aplicando embalagem de fallback (ID: 33).", model.getIdDtm());
+            model.setIdEmbalagem(33);
         }
+
+        if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) {
+            String hrInicioDefault = appProperties.getDefaults().getHrInicio();
+            model.setHrColetaInicio(hrInicioDefault != null ? hrInicioDefault : "08:00");
+            log.debug("DTM {}: HrColetaInicio definida para o padrão: {}", model.getIdDtm(), model.getHrColetaInicio());
+        }
+        if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
+             String hrFimDefault = appProperties.getDefaults().getHrFim();
+             model.setHrColetaFim(hrFimDefault != null ? hrFimDefault : "16:00");
+             log.debug("DTM {}: HrColetaFim definida para o padrão: {}", model.getIdDtm(), model.getHrColetaFim());
+        }
+
         if (model.getTpModal() == null) {
-            model.setTpModal(appProperties.getDefaults().getModal() == AppProperties.Defaults.Modal.AEREO ? 2 : 1);
+            AppProperties.Defaults.Modal defaultModalEnum = appProperties.getDefaults().getModal();
+            if (defaultModalEnum != null) {
+                 try {
+                     model.setTpModal(Modal.valueOf(defaultModalEnum.name()));
+                     log.debug("DTM {}: TpModal definido para o padrão: {}", model.getIdDtm(), model.getTpModal());
+                 } catch (IllegalArgumentException e) {
+                      log.error("DTM {}: Enum Modal '{}' definido em AppProperties não corresponde ao enum Modal do domínio. Usando AÉREO como fallback.", model.getIdDtm(), defaultModalEnum.name());
+                      model.setTpModal(Modal.AEREO);
+                 }
+            } else {
+                 log.warn("DTM {}: Modal padrão não definido em AppProperties. Usando AÉREO como fallback.", model.getIdDtm());
+                 model.setTpModal(Modal.AEREO);
+            }
         }
     }
 }

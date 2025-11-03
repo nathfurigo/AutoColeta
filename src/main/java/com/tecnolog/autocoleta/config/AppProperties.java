@@ -58,14 +58,14 @@ public class AppProperties {
         private Integer idTomador;
         private Integer idLocalColeta;
         private Integer idTipoColetaDefault;
-        private Modal modal;
-        private Integer idFilialResposavel;
+        private Modal modal = Modal.AEREO;
+        private Integer idFilialResposavel = 135;
         private Integer idEnderecoCidade;
         private Integer idAgente;
         private String hrInicio;
         private String hrFim;
         
-        public enum Modal { RODOVIARIO, AEREO }
+        public enum Modal { AEREO }
 
         public Integer getIdRemetente() { return idRemetente; }
         public void setIdRemetente(Integer idRemetente) { this.idRemetente = idRemetente; }

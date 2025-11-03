@@ -3,6 +3,9 @@ package com.tecnolog.autocoleta.dto.salvarcoleta;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tecnolog.autocoleta.domain.Modal;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,7 +18,7 @@ public class SalvaColetaModel {
     @JsonProperty("idRemetente")        private Integer idRemetente;
     @JsonProperty("idDestinatario")     private Integer idDestinatario;
     @JsonProperty("idTomador")          private Integer idTomador;
-    @JsonProperty("idFilialResposavel") private Integer idFilialResposavel;
+    @JsonProperty("idFilialResposavel") private Integer idFilialResposavel = 135; 
     @JsonProperty("idLocalColeta")      private Integer idLocalColeta;
     @JsonProperty("dsRemetente")        private String dsRemetente;
     @JsonProperty("cdRemetenteCnpj")    private String cdRemetenteCnpj;
@@ -31,13 +34,13 @@ public class SalvaColetaModel {
     @JsonProperty("dtEntrega")  @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtEntrega;
 
-    @JsonProperty("tpModal")            private Integer tpModal;
+    @JsonProperty("tpModal")            private Modal tpModal;
     @JsonProperty("dsEndereco")         private String dsEndereco;
     @JsonProperty("nrEnderecoNR")       private String nrEnderecoNR;
     @JsonProperty("dsEnderecoBairro")   private String dsEnderecoBairro;
     @JsonProperty("dsEnderecoComplento")private String dsEnderecoComplento;
     @JsonProperty("cdEnderecoCEP")      private String cdEnderecoCEP;
-    @JsonProperty("idEnderecoCidade")   private Integer idEnderecoCidade;
+    @JsonProperty("idEnderecoCidade")   private Integer idEnderecoCidade; 
     @JsonProperty("dsSolicitante")      private String dsSolicitante;
     @JsonProperty("dsSolicitanteNome")  private String dsSolicitanteNome;
     @JsonProperty("dsProcurarPor")      private String dsProcurarPor;
@@ -47,12 +50,16 @@ public class SalvaColetaModel {
     @JsonProperty("idEmbalagem")        private Integer idEmbalagem;
     @JsonProperty("idNaturezaCarga")    private Integer idNaturezaCarga;
     @JsonProperty("dsAgente")           private String dsAgenteNome;
-    @JsonProperty("dsAgenteEmail")      private String dsAgenteEmail;
-    @JsonProperty("dsTipoColeta")       private String dsTipoColeta;
-    @JsonProperty("dsEmbalagem")        private String dsEmbalagem;
-    @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga;
-    @JsonProperty("nrReferencia")       private Long nrReferencia;
+    @JsonProperty("dsAgenteEmail")      private String dsAgenteEmail; 
+    @JsonProperty("dsTipoColeta")       private String dsTipoColeta; 
+    @JsonProperty("dsEmbalagem")        private String dsEmbalagem; 
+    @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga; 
+    @JsonProperty("nrReferencia")       private String nrReferencia;
     @JsonProperty("nrPedidoCliente")    private String nrPedidoCliente;
+    @JsonProperty("vlTotalNF")          private BigDecimal vlTotalNF;
+    @JsonProperty("dsCidadeColeta")     private String dsCidadeColeta;     
+    @JsonProperty("dsCidadeColetaUF")   private String dsCidadeColetaUF;   
+    @JsonProperty("dsCidadeDestino")    private String dsCidadeDestino;    
     @JsonProperty("NF")                 private List<SalvaColetaNFModel> nf;
     @JsonProperty("Dimensoes")          private List<SalvaColetaDimensoesModel> dimensoes;
     @JsonProperty("Monitoramento")      private List<SalvaColetaMonitoramentoModel> monitoramento;
@@ -94,8 +101,8 @@ public class SalvaColetaModel {
     public void setHrColetaFim(String hrColetaFim) { this.hrColetaFim = hrColetaFim; }
     public LocalDate getDtEntrega() { return dtEntrega; }
     public void setDtEntrega(LocalDate dtEntrega) { this.dtEntrega = dtEntrega; }
-    public Integer getTpModal() { return tpModal; }
-    public void setTpModal(Integer tpModal) { this.tpModal = tpModal; }
+    public Modal getTpModal() { return tpModal; }
+    public void setTpModal(Modal tpModal) { this.tpModal = tpModal; }
     public String getDsEndereco() { return dsEndereco; }
     public void setDsEndereco(String dsEndereco) { this.dsEndereco = dsEndereco; }
     public String getNrEnderecoNR() { return nrEnderecoNR; }
@@ -110,6 +117,8 @@ public class SalvaColetaModel {
     public void setIdEnderecoCidade(Integer idEnderecoCidade) { this.idEnderecoCidade = idEnderecoCidade; }
     public String getDsSolicitante() { return dsSolicitante; }
     public void setDsSolicitante(String dsSolicitante) { this.dsSolicitante = dsSolicitante; }
+    public String getDsSolicitanteNome() { return dsSolicitanteNome; }
+    public void setDsSolicitanteNome(String dsSolicitanteNome) { this.dsSolicitanteNome = dsSolicitanteNome; }
     public String getDsProcurarPor() { return dsProcurarPor; }
     public void setDsProcurarPor(String dsProcurarPor) { this.dsProcurarPor = dsProcurarPor; }
     public String getNrTelefone() { return nrTelefone; }
@@ -122,16 +131,22 @@ public class SalvaColetaModel {
     public void setIdEmbalagem(Integer idEmbalagem) { this.idEmbalagem = idEmbalagem; }
     public Integer getIdNaturezaCarga() { return idNaturezaCarga; }
     public void setIdNaturezaCarga(Integer idNaturezaCarga) { this.idNaturezaCarga = idNaturezaCarga; }
+    public String getDsAgenteNome() { return dsAgenteNome; }
+    public void setDsAgenteNome(String dsAgenteNome) { this.dsAgenteNome = dsAgenteNome; }
+    public String getDsAgenteEmail() { return dsAgenteEmail; }
+    public void setDsAgenteEmail(String dsAgenteEmail) { this.dsAgenteEmail = dsAgenteEmail; }
     public String getDsTipoColeta() { return dsTipoColeta; }
     public void setDsTipoColeta(String dsTipoColeta) { this.dsTipoColeta = dsTipoColeta; }
     public String getDsEmbalagem() { return dsEmbalagem; }
     public void setDsEmbalagem(String dsEmbalagem) { this.dsEmbalagem = dsEmbalagem; }
     public String getDsNaturezaCarga() { return dsNaturezaCarga; }
     public void setDsNaturezaCarga(String dsNaturezaCarga) { this.dsNaturezaCarga = dsNaturezaCarga; }
-    public Long getNrReferencia() { return nrReferencia; }
-    public void setNrReferencia(Long nrReferencia) { this.nrReferencia = nrReferencia; }
+    public String getNrReferencia() { return nrReferencia; }
+    public void setNrReferencia(String nrReferencia) { this.nrReferencia = nrReferencia; }
     public String getNrPedidoCliente() { return nrPedidoCliente; }
     public void setNrPedidoCliente(String nrPedidoCliente) { this.nrPedidoCliente = nrPedidoCliente; }
+    public BigDecimal getVlTotalNF() { return vlTotalNF; }
+    public void setVlTotalNF(BigDecimal vlTotalNF) { this.vlTotalNF = vlTotalNF; }
     public List<SalvaColetaNFModel> getNf() { return nf; }
     public void setNf(List<SalvaColetaNFModel> nf) { this.nf = nf; }
     public List<SalvaColetaDimensoesModel> getDimensoes() { return dimensoes; }
@@ -140,10 +155,10 @@ public class SalvaColetaModel {
     public void setMonitoramento(List<SalvaColetaMonitoramentoModel> monitoramento) { this.monitoramento = monitoramento; }
     public String getDsComentarios() { return dsComentarios; }
     public void setDsComentarios(String dsComentarios) { this.dsComentarios = dsComentarios; }
-    public String getDsAgenteNome() { return dsAgenteNome; }
-    public void setDsAgenteNome(String dsAgenteNome) { this.dsAgenteNome = dsAgenteNome; }
-    public String getDsAgenteEmail() { return dsAgenteEmail; }
-    public void setDsAgenteEmail(String dsAgenteEmail) { this.dsAgenteEmail = dsAgenteEmail; }
-    public String getDsSolicitanteNome() { return dsSolicitanteNome; }
-    public void setDsSolicitanteNome(String dsSolicitanteNome) { this.dsSolicitanteNome = dsSolicitanteNome; }
+    public String getDsCidadeColeta() { return dsCidadeColeta; }
+    public void setDsCidadeColeta(String dsCidadeColeta) { this.dsCidadeColeta = dsCidadeColeta; }
+    public String getDsCidadeColetaUF() { return dsCidadeColetaUF; }
+    public void setDsCidadeColetaUF(String dsCidadeColetaUF) { this.dsCidadeColetaUF = dsCidadeColetaUF; }
+    public String getDsCidadeDestino() { return dsCidadeDestino; }
+    public void setDsCidadeDestino(String dsCidadeDestino) { this.dsCidadeDestino = dsCidadeDestino; }
 }

@@ -42,23 +42,24 @@ logging:
 
 app:
   scheduler:
-    batch-size: 5           
+    batch-size: 3
   dtm:
     view: "public.vw_dtm_pedidocoleta_unica"
     lock-table: "public.dtm_automation_lock"
   salvarColeta:
   #Homologação
-    #baseUrl: "https://Hmg-beta.synclog.com.br"
-  #Produção
-    baseUrl: "https://beta.synclog.com.br"
+    baseUrl: "https://Hmg-beta.synclog.com.br"
     tokenHash: "FF08C55E-9D84-4E09-A19C-920F66255E19"
+  #Produção
+    #baseUrl: "https://beta.synclog.com.br"
+    #tokenHash: "FF08C55E-9D84-4E09-A19C-920F66255E19"
     timeout-seconds: 30
   salvarOcorrencia:
   #Homologação
-    #baseUrl: "https://dev.synclog.com.br"
+    baseUrl: "https://dev.synclog.com.br"
   #Produção
-    baseUrl: "https://synclog.com.br"
+    #baseUrl: "https://synclog.com.br"
     system-token: "5de61eb7-39a6-49e4-8b0c-a52e2659dc2e"
   defaults:
-    hr-inicio: "00:00"         
-    hr-fim: "23:59"            
+    hr-inicio: "08:00"         
+    hr-fim: "16:00"            

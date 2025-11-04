@@ -3,11 +3,11 @@ spring:
     #Homologação Remota
     #jdbc-url: "jdbc:postgresql://10.58.16.3:5432/dtbSyncLog_Hmg"
     #Homologação Local
-    jdbc-url: "jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg"
+    #jdbc-url: "jdbc:postgresql://localhost:5432/dtbSyncLog_Hmg"
     #Produção Remota
     #jdbc-url: "jdbc:postgresql://10.58.16.3:5432/dtbSyncLog"
     #Produção Local
-    #jdbc-url: "jdbc:postgresql://localhost:5432/dtbSyncLog"
+    jdbc-url: "jdbc:postgresql://localhost:5432/dtbSyncLog"
     username: "postgres"
     password: "BRU*980192@no"
     driver-class-name: org.postgresql.Driver
@@ -17,11 +17,11 @@ spring:
 
     sqlserver:
       #Homologação Local
-      jdbc-url: "jdbc:sqlserver://192.168.10.251:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;"
+      #jdbc-url: "jdbc:sqlserver://192.168.10.251:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;"
       #Homologação Remota
       #jdbc-url: "jdbc:sqlserver://esl.tecnolog.com.br:1433;databaseName=dtbTransporteHomologacao;encrypt=true;trustServerCertificate=true;"
       #Produção Local
-      #jdbc-url: "jdbc:sqlserver://192.168.10.251:1433;databaseName=dtbTransporte;encrypt=true;trustServerCertificate=true;"
+      jdbc-url: "jdbc:sqlserver://192.168.10.251:1433;databaseName=dtbTransporte;encrypt=true;trustServerCertificate=true;"
       #Produção Remota
       #jdbc-url: "jdbc:sqlserver://esl.tecnolog.com.br:1433;databaseName=dtbTransporte;encrypt=true;trustServerCertificate=true;"
       username: "sa"

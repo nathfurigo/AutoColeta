@@ -1,5 +1,6 @@
 package com.tecnolog.autocoleta.dtm;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,13 +30,12 @@ public class SqlServerRepository {
 
     private static final Map<String, String> CIDADE_AGENTE_MAP;
     static {
-        // Usa TreeMap para garantir a ordem alfabética automática pela chave
-        // *** ATENÇÃO: As chaves do mapa devem ser normalizadas (sem acento, maiúsculas) ***
         CIDADE_AGENTE_MAP = new TreeMap<>();
         
         CIDADE_AGENTE_MAP.put("ALTO DO RODRIGUES/RN", "NAT - TRANSROCHA LOGISTICA");
         CIDADE_AGENTE_MAP.put("ALVORADA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
         CIDADE_AGENTE_MAP.put("ANCHIETA/ES", "VIX - TRANSMATTOS");
+        CIDADE_AGENTE_MAP.put("ANGRA DOS REIS/RJ", "TEC - RIO");
         CIDADE_AGENTE_MAP.put("ARACAJU/SE", "AJU-LUCIANO DOS SANTOS ARMANDO");
         CIDADE_AGENTE_MAP.put("ARAUCARIA/PR", "CWB - JOAMAC CARGAS AEREAS");
         CIDADE_AGENTE_MAP.put("BARUERI/SP", "TEC - SAO");
@@ -44,6 +44,8 @@ public class SqlServerRepository {
         CIDADE_AGENTE_MAP.put("BETIM/MG", "BHZ - EDROSE LOGISTICA");
         CIDADE_AGENTE_MAP.put("BOA VISTA/RR", "BVB - R.D. DE MEDEIROS TRANSPORTE");
         CIDADE_AGENTE_MAP.put("BRASILIA/DF", "TEC - BSB");
+        CIDADE_AGENTE_MAP.put("CABO DE SANTO AGOSTINHO/PE", "REC - DACAL EXPRESS CARGO");
+        CIDADE_AGENTE_MAP.put("CAIEIRAS/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("CAJAMAR/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("CAMPINAS/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("CAMPO GRANDE/MS", "TJL - A.D.O. LOGISTICA E SERVICOS AUXILIARES EM TR");
@@ -69,6 +71,7 @@ public class SqlServerRepository {
         CIDADE_AGENTE_MAP.put("GOIANIA/GO", "GYN - RAPIDO UNIVERSAL");
         CIDADE_AGENTE_MAP.put("GUARULHOS/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("IBIRITE/MG", "BHZ - EDROSE LOGISTICA");
+        CIDADE_AGENTE_MAP.put("INDAIATUBA/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("IPERO/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("IPOJUCA/PE", "REC - DACAL EXPRESS CARGO");
         CIDADE_AGENTE_MAP.put("ITABORAI/RJ", "TEC - RIO");
@@ -82,6 +85,7 @@ public class SqlServerRepository {
         CIDADE_AGENTE_MAP.put("MAUA/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("NATAL/RN", "NAT - TRANSROCHA LOGISTICA");
         CIDADE_AGENTE_MAP.put("NILOPOLIS/RJ", "TEC - RIO");
+        CIDADE_AGENTE_MAP.put("PARACURU/CE", "FOR - M BRAGA JUNIOR");
         CIDADE_AGENTE_MAP.put("PAULINIA/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("PINDAMONHANGABA/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("PINHAIS/PR", "CWB - JOAMAC CARGAS AEREAS");
@@ -91,11 +95,11 @@ public class SqlServerRepository {
         CIDADE_AGENTE_MAP.put("RIO DE JANEIRO/RJ", "TEC - RIO");
         CIDADE_AGENTE_MAP.put("SALVADOR/BA", "TEC - SSA");
         CIDADE_AGENTE_MAP.put("SANTOS/SP", "TEC - SAO");
-        CIDADE_AGENTE_MAP.put("SAO FRANCISCO DE PAULA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
-        CIDADE_AGENTE_MAP.put("SAO LUIS/MA", "SLZ - N M MACHADO TRANSP DE CARGAS RODOAERIAS");
         CIDADE_AGENTE_MAP.put("SAO BERNARDO DO CAMPO/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO FRANCISCO DE PAULA/RS", "POA - CONEXAO F2 TRANSPORTE E LOGISTICA LTDA");
         CIDADE_AGENTE_MAP.put("SAO FRANCISCO DO CONDE/BA", "TEC - SSA");
         CIDADE_AGENTE_MAP.put("SAO JOSE DOS CAMPOS/SP", "TEC - SAO");
+        CIDADE_AGENTE_MAP.put("SAO LUIS/MA", "SLZ - N M MACHADO TRANSP DE CARGAS RODOAERIAS");
         CIDADE_AGENTE_MAP.put("SAO MATEUS/ES", "VIX - TRANSMATTOS");
         CIDADE_AGENTE_MAP.put("SAO MATEUS DO SUL/PR", "CWB - JOAMAC CARGAS AEREAS");
         CIDADE_AGENTE_MAP.put("SAO PAULO/SP", "TEC - SAO");
@@ -110,6 +114,7 @@ public class SqlServerRepository {
         CIDADE_AGENTE_MAP.put("VINHEDO/SP", "TEC - SAO");
         CIDADE_AGENTE_MAP.put("VITORIA/ES", "VIX - TRANSMATTOS");
     }
+
     private static final Map<String, String> NATUREZA_KEYWORD_MAP;
     static {
         NATUREZA_KEYWORD_MAP = new LinkedHashMap<>();
@@ -158,6 +163,7 @@ public class SqlServerRepository {
         NATUREZA_KEYWORD_MAP.put("JOGO DE CUNHAS", "JOGO DE CUNHAS");
         NATUREZA_KEYWORD_MAP.put("CAIXA DE PASSAGEM", "CAIXA DE PASSAGEM");
         NATUREZA_KEYWORD_MAP.put("CAIXA PASSAG", "CAIXA DE PASSAGEM");
+        NATUREZA_KEYWORD_MAP.put("CAIXA DE JUNCAO", "CAIXA DE PASSAGEM");
         NATUREZA_KEYWORD_MAP.put("VÁLV.ESF", "VALVULAS");
         NATUREZA_KEYWORD_MAP.put("VÁLVULA", "VALVULAS");
         NATUREZA_KEYWORD_MAP.put("VALVULA", "VALVULAS");
@@ -587,7 +593,26 @@ public class SqlServerRepository {
         if (model.getIdEnderecoCidade() == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
              model.setIdEnderecoCidade(findCidadeIdByName(model.getDsCidadeColeta()));
         }
-        model.setIdAgente(findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail()));        
+
+        Integer agenteId = findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail());
+
+        if (agenteId == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
+            log.info("DTM {}: Agente não encontrado pelo nome ({}). Tentando busca pela cidade de coleta ({})",
+                    model.getIdDtm(), model.getDsAgenteNome(), model.getDsCidadeColeta());
+
+            String nomeAgenteDoMapa = findAgenteNomeByCidadeColeta(model.getDsCidadeColeta());
+
+            if (nomeAgenteDoMapa != null) {
+                log.info("DTM {}: Cidade de coleta ({}) mapeada para o agente '{}'. Buscando ID...",
+                        model.getIdDtm(), model.getDsCidadeColeta(), nomeAgenteDoMapa);
+                agenteId = findAgenteIdByNomeOuEmail(nomeAgenteDoMapa, null); 
+            } else {
+                log.warn("DTM {}: Nenhum agente encontrado no mapa CIDADE_AGENTE_MAP para a cidade '{}'",
+                        model.getIdDtm(), model.getDsCidadeColeta());
+            }
+        }
+        
+        model.setIdAgente(agenteId); 
         model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem())); 
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
@@ -608,89 +633,91 @@ public class SqlServerRepository {
         fillDefaultsIfNull(model);
     }
 
-    private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
+private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
         if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) {
-            log.warn("Nenhum nome ou email fornecido para buscar o Agente.");
+            log.debug("Nenhum nome ou email fornecido para buscar o Agente.");
             return null;
         }
 
         String siglaBusca = null;
         String nomeCompleto = nome;
-        String nomeApenas = nome;    
+        String nomeApenas = nome;     
 
         if (nome != null && nome.contains(" - ")) {
             try {
                 String[] parts = nome.split(" - ", 2);
                 siglaBusca = parts[0].trim();
                 nomeApenas = parts[1].trim();
-                log.info("Input do Agente '{}' foi dividido em Sigla/Cidade/UF '{}' e Nome '{}'", nomeCompleto, siglaBusca, nomeApenas);
+                log.debug("Input do Agente '{}' foi dividido em Sigla/Cidade/UF '{}' e Nome '{}'", nomeCompleto, siglaBusca, nomeApenas);
             } catch (Exception e) {
                 log.warn("Falha ao tentar dividir o nome do agente '{}'. Usando o nome completo para todas as buscas.", nomeCompleto);
                 siglaBusca = null;
                 nomeApenas = nomeCompleto; 
             }
         }
-
-        String sql = """
-            SELECT TOP 1 p.id_Pessoa
-            FROM tbdPessoa p
-            LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade
-            WHERE 
-            """;
-
-        StringBuilder whereClause = new StringBuilder();
+        
         List<Object> params = new ArrayList<>();
 
-        if (email != null && !email.isBlank()) {
-            whereClause.append("(LOWER(p.cd_Email) = ?)");
-            params.add(email.toLowerCase());
-        }
-
-        if (nomeApenas != null && !nomeApenas.isBlank()) {
-            if (!whereClause.isEmpty()) whereClause.append(" OR ");
-            whereClause.append("(LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?)");
-            params.add("%" + nomeApenas.toLowerCase() + "%"); 
-        }
-        
-        if (nomeCompleto != null && !nomeCompleto.isBlank() && !nomeCompleto.equals(nomeApenas)) {
-             if (!whereClause.isEmpty()) whereClause.append(" OR ");
-             whereClause.append("(LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ?)");
-             params.add("%" + nomeCompleto.toLowerCase() + "%"); 
-        }
-        
-        if (siglaBusca != null && !siglaBusca.isBlank()) {
-            if (!whereClause.isEmpty()) whereClause.append(" OR ");
-            
-            whereClause.append("(LOWER(c.cd_Sigla) = ?)");
+        // Tentativa 1: Busca combinada (Mais específica)
+        // Busca por uma Pessoa que tenha a sigla da cidade E o nome exato (ignorando espaços no final)
+        if (siglaBusca != null && !siglaBusca.isBlank() && nomeCompleto != null && !nomeCompleto.isBlank()) {
+            String sql1 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p " + 
+                          "LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade " +
+                          "WHERE (LOWER(c.cd_Sigla) = ? AND RTRIM(LOWER(p.ds_Pessoa)) = ?)";
+                          
             params.add(siglaBusca.toLowerCase());
-            whereClause.append(" OR (LOWER(c.ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?)");
-            params.add("%" + siglaBusca.toLowerCase() + "%");
+            params.add(nomeCompleto.toLowerCase());
             
-            if (siglaBusca.length() == 2) {
-                whereClause.append(" OR (LOWER(c.cd_UF) = ?)");
-                params.add(siglaBusca.toLowerCase());
+            try {
+                Integer id = jdbc.queryForObject(sql1, Integer.class, params.toArray());
+                log.info("ID do Agente (Pessoa) encontrado com busca [Combinada Sigla+Nome Exato]: {} (busca por nome='{}', sigla='{}')", id, nomeCompleto, siglaBusca);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Combinada Sigla+Nome Exato]. Tentando próxima.");
+            } catch (Exception e) {
+                log.error("Erro ao executar busca [Combinada Sigla+Nome Exato] de Agente: {}", e.getMessage(), e);
             }
         }
 
-        if (params.isEmpty()) {
-            log.warn("Nenhum critério de busca válido para o agente (nome='{}', email='{}')", nomeCompleto, email);
-            return null;
+        // Tentativa 2: Busca por nome completo exato (se a combinada falhar)
+        // Esta é a busca principal que deve funcionar com base nos seus dados
+        if (nomeCompleto != null && !nomeCompleto.isBlank()) {
+             params.clear();
+             String sql2 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (RTRIM(LOWER(p.ds_Pessoa)) = ?)";
+             params.add(nomeCompleto.toLowerCase());
+             
+             try {
+                Integer id = jdbc.queryForObject(sql2, Integer.class, params.toArray());
+                log.info("ID do Agente (Pessoa) encontrado com busca [Nome Completo Exato]: {} (busca por nome='{}')", id, nomeCompleto);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Nome Completo Exato]. Tentando próxima.");
+            } catch (Exception e) {
+                log.error("Erro ao executar busca [Nome Completo Exato] de Agente: {}", e.getMessage(), e);
+            }
+        }
+        
+        if (email != null && !email.isBlank()) {
+             params.clear();
+             String sql3 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (LOWER(p.cd_Email) = ?)";
+             params.add(email.toLowerCase());
+             
+             try {
+                Integer id = jdbc.queryForObject(sql3, Integer.class, params.toArray());
+                log.info("ID do Agente (Pessoa) encontrado com busca [Email]: {} (busca por email='{}')", id, email);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Email]. Tentando próxima.");
+            } catch (Exception e) {
+                log.error("Erro ao executar busca [Email] de Agente: {}", e.getMessage(), e);
+            }
         }
 
-        String finalSql = sql + " (" + whereClause.toString() + ")";
-        
-        try {
-            Integer id = jdbc.queryForObject(finalSql, Integer.class, params.toArray());
-            log.info("ID do Agente (Pessoa) encontrado com busca complexa: {} (busca por nome='{}', email='{}', sigla='{}')", id, nomeCompleto, email, siglaBusca);
-            return id;
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Nenhum Agente (Pessoa) encontrado com busca complexa para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
-            return null;
-        } catch (Exception e) {
-            log.error("Erro ao executar busca complexa de Agente: {}", e.getMessage(), e);
-            return null;
-        }
+        log.warn("Nenhum Agente (Pessoa) encontrado com busca específica para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
+        // Retorna null para que o método 'fillDefaultsIfNull' possa aplicar o ID Agente padrão
+        return null;
     }
+
     private Integer findPessoaId(String nome, String cnpj) {
         if ((nome == null || nome.isBlank()) && (cnpj == null || cnpj.isBlank())) {
             return null;
@@ -811,7 +838,12 @@ public class SqlServerRepository {
         if (cityName == null || cityName.isBlank()) {
             return null;
         }
+        
         String trimmedCityName = cityName.trim();
+        if (trimmedCityName.contains("/")) {
+            trimmedCityName = trimmedCityName.split("/")[0].trim();
+        }
+
         if (trimmedCityName.isEmpty()) {
             return null;
         }
@@ -838,11 +870,15 @@ public class SqlServerRepository {
         if (model.getIdLocalColeta() == null) model.setIdLocalColeta(appProperties.getDefaults().getIdLocalColeta());
         if (model.getIdEnderecoCidade() == null) model.setIdEnderecoCidade(appProperties.getDefaults().getIdEnderecoCidade());
         if (model.getIdTipoColeta() == null) model.setIdTipoColeta(appProperties.getDefaults().getIdTipoColetaDefault());
-        if (model.getIdAgente() == null) model.setIdAgente(appProperties.getDefaults().getIdAgente());
+        if (model.getIdAgente() == null) {
+            log.warn("DTM {}: Agente não encontrado por nome nem por cidade de coleta. Aplicando agente padrão (ID: {}).", model.getIdDtm(), appProperties.getDefaults().getIdAgente());
+            model.setIdAgente(appProperties.getDefaults().getIdAgente());
+        }
+
         if (model.getIdNaturezaCarga() == null) {
-                log.warn("DTM {}: ID da Natureza da Carga não foi encontrado. Aplicando natureza genérica de fallback (ID: 1400).", model.getIdDtm());
-                model.setIdNaturezaCarga(1400); 
-            }
+             log.warn("DTM {}: ID da Natureza da Carga não foi encontrado. Aplicando natureza genérica de fallback (ID: 1400).", model.getIdDtm());
+             model.setIdNaturezaCarga(1400); 
+        }
         if (model.getIdEmbalagem() == null) {
             log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado. Aplicando embalagem de fallback (ID: 33).", model.getIdDtm());
             model.setIdEmbalagem(33);
@@ -874,5 +910,46 @@ public class SqlServerRepository {
                  model.setTpModal(Modal.AEREO);
             }
         }
+    }
+
+    private String findAgenteNomeByCidadeColeta(String cidadeColeta) {
+        String cidadeNormalizada = normalizarString(cidadeColeta);
+        if (cidadeNormalizada == null) {
+            return null;
+        }
+
+        String nomeAgente = CIDADE_AGENTE_MAP.get(cidadeNormalizada);
+        if (nomeAgente != null) {
+            log.debug("Mapeamento de agente por cidade (chave exata) encontrado: '{}' -> '{}'", cidadeNormalizada, nomeAgente);
+            return nomeAgente;
+        }
+
+        if (!cidadeNormalizada.contains("/")) {
+            for (Map.Entry<String, String> entry : CIDADE_AGENTE_MAP.entrySet()) {
+                if (entry.getKey().startsWith(cidadeNormalizada + "/")) {
+                    log.info("Mapeamento de agente por cidade (parcial) encontrado: Cidade '{}' corresponde à chave '{}' do mapa.", cidadeNormalizada, entry.getKey());
+                    return entry.getValue(); 
+                }
+            }
+        }
+
+        for (Map.Entry<String, String> entry : CIDADE_AGENTE_MAP.entrySet()) {
+             if (entry.getKey().contains(cidadeNormalizada)) {
+                log.warn("Mapeamento de agente por cidade ('contains', menos preciso) encontrado: Cidade '{}' corresponde à chave '{}' do mapa.", cidadeNormalizada, entry.getKey());
+                return entry.getValue();
+             }
+        }
+
+        return null; 
+    }
+
+    private String normalizarString(String input) {
+        if (input == null || input.isBlank()) {
+            return null;
+        }
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        
+        return normalized.toUpperCase().trim();
     }
 }

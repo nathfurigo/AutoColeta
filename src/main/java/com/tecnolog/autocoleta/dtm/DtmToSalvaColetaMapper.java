@@ -3,86 +3,114 @@ package com.tecnolog.autocoleta.dtm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaDimensoesModel;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
+import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaNFModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import java.util.List;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class DtmToSalvaColetaMapper {
 
     private static final Logger log = LoggerFactory.getLogger(DtmToSalvaColetaMapper.class);
-
     private final ObjectMapper om;
 
     public DtmToSalvaColetaMapper(ObjectMapper om) {
         this.om = om;
     }
 
-    private void corrigirEscalaDimensoes(List<SalvaColetaDimensoesModel> dimensoes, long idDtm) {
-        if (dimensoes == null) {
-            log.warn("DTM {}: Lista de dimensões nula, não foi possível corrigir escala.", idDtm);
-            return;
+    /**
+     * Converte o valor de metros (ex: 0.15) para centímetros (ex: 15.0).
+     */
+    private Double metrosParaCentimetros(Double metros) {
+        if (metros == null) {
+            return null;
         }
-
-        final double LIMITE_METROS = 10.0;
-
-        for (SalvaColetaDimensoesModel dim : dimensoes) {
-            Double compOriginal = dim.getComp();
-            Double largOriginal = dim.getLarg();
-            Double altOriginal = dim.getAlt();
-            boolean corrigido = false;
-
-            if (compOriginal != null && compOriginal > 0 && compOriginal < LIMITE_METROS) {
-                dim.setComp(multiplicarPorCemEArredondar(compOriginal));
-                log.debug("DTM {}: Comp corrigido de {}m para {}cm.", idDtm, compOriginal, dim.getComp());
-                corrigido = true;
-            }
-            if (largOriginal != null && largOriginal > 0 && largOriginal < LIMITE_METROS) {
-                dim.setLarg(multiplicarPorCemEArredondar(largOriginal));
-                log.debug("DTM {}: Larg corrigido de {}m para {}cm.", idDtm, largOriginal, dim.getLarg());
-                corrigido = true;
-            }
-            if (altOriginal != null && altOriginal > 0 && altOriginal < LIMITE_METROS) {
-                dim.setAlt(multiplicarPorCemEArredondar(altOriginal));
-                log.debug("DTM {}: Alt corrigido de {}m para {}cm.", idDtm, altOriginal, dim.getAlt());
-                corrigido = true;
-            }
-
-        }
-    }
-
-    private Double multiplicarPorCemEArredondar(Double meters) {
-        if (meters == null) return null;
-        return BigDecimal.valueOf(meters)
+        return BigDecimal.valueOf(metros)
                          .multiply(BigDecimal.valueOf(100.0))
                          .setScale(2, RoundingMode.HALF_UP)
                          .doubleValue();
     }
 
+    /**
+     * Mapeia o JSON (que já está no formato SalvaColetaModel) e aplica
+     * as correções necessárias (ID da DTM e conversão de M para CM).
+     */
     public SalvaColetaModel map(DtmPendingRow row) {
         if (row == null || row.getJsonPedidoColeta() == null || row.getJsonPedidoColeta().isBlank()) {
              log.error("Tentativa de mapear DtmPendingRow nula ou com JSON vazio.");
              throw new IllegalArgumentException("DtmPendingRow inválido para mapeamento.");
         }
 
+        long idDtm = row.getIdDtm();
+
         try {
-            SalvaColetaModel req = om.readValue(row.getJsonPedidoColeta(), SalvaColetaModel.class);
+            // 1. Desserializar DIRETAMENTE para o modelo final (SalvaColetaModel)
+            SalvaColetaModel model = om.readValue(row.getJsonPedidoColeta(), SalvaColetaModel.class);
+            
+            // 2. Definir o ID da DTM (que não vem no JSON interno)
+            model.setIdDtm(idDtm);
 
-            req.setIdDtm(row.getIdDtm());
+            // 3. CORRIGIR AS DIMENSÕES (M para CM)
+            if (model.getDimensoes() != null && !model.getDimensoes().isEmpty()) {
+                for (SalvaColetaDimensoesModel dim : model.getDimensoes()) {
+                    
+                    Double compM = dim.getComp(); // Valor original (ex: 0.15)
+                    Double largM = dim.getLarg(); // Valor original (ex: 0.15)
+                    Double altM = dim.getAlt();   // Valor original (ex: 0.15)
 
-            corrigirEscalaDimensoes(req.getDimensoes(), req.getIdDtm());
+                    dim.setComp(metrosParaCentimetros(compM));
+                    dim.setLarg(metrosParaCentimetros(largM));
+                    dim.setAlt(metrosParaCentimetros(altM));
+                    
+                    log.debug("DTM {}: Dimensões corrigidas - Entrada(M): C:{}/L:{}/A:{} -> Saída(CM): C:{}/L:{}/A:{}",
+                              idDtm, compM, largM, altM, dim.getComp(), dim.getLarg(), dim.getAlt());
+                }
+            } else {
+                 log.warn("DTM {}: Nenhuma dimensão encontrada no JSON.", idDtm);
+            }
 
-            log.debug("Mapeamento do JSON da view para DTM {} concluído. ID {} definido.", row.getIdDtm(), req.getIdDtm());
+            // --- INÍCIO DO AJUSTE PARA VLTOTALNF ---
+            // A API SalvaColeta ignora o campo vlTotalNF e soma os itens da lista NF.
+            // Se a lista NF estiver vazia e vlTotalNF > 0, criamos uma NF genérica.
+            if ((model.getNf() == null || model.getNf().isEmpty()) && 
+                 model.getVlTotalNF() != null && 
+                 model.getVlTotalNF().compareTo(BigDecimal.ZERO) > 0) {
+                
+                log.warn("DTM {}: A lista NF estava vazia, mas vlTotalNF era {}. Criando uma NF genérica (Nr: 0) para compatibilidade com a API.",
+                         model.getIdDtm(), model.getVlTotalNF());
+                
+                SalvaColetaNFModel nfGenerica = new SalvaColetaNFModel();
+                
+                // *** ALTERAÇÃO SOLICITADA: Usar "0" em vez do número da DTM ***
+                nfGenerica.setNr("0");
+                
+                // Usa o valor total como o valor desta NF
+                nfGenerica.setVl(model.getVlTotalNF()); 
+                
+                // Adiciona esta NF à lista
+                List<SalvaColetaNFModel> nfs = new ArrayList<>();
+                nfs.add(nfGenerica);
+                model.setNf(nfs);
+            }
+            // --- FIM DO AJUSTE ---
 
-            return req;
+            // 4. Forçar Agente como nulo para que o SqlServerRepository
+            // use o padrão da cidade.
+            model.setDsAgenteNome(null);
+            model.setDsAgenteEmail(null);
+
+            log.debug("Mapeamento direto do JSON para DTM {} concluído.", idDtm);
+            return model;
 
         } catch (Exception e) {
             log.error("Falha ao mapear JSON da view para SalvaColetaModel para DTM {}. Causa: {}. JSON: {}",
-                      row.getIdDtm(), e.getMessage(), row.getJsonPedidoColeta(), e);
-            throw new IllegalStateException("Falha ao mapear JSON da view para SalvaColetaModel para DTM " + row.getIdDtm() + ". Verifique o formato do JSON ou o mapeamento da classe.", e);
+                      idDtm, e.getMessage(), row.getJsonPedidoColeta(), e);
+            throw new IllegalStateException("Falha ao mapear JSON da view para SalvaColetaModel para DTM " + idDtm + ". Verifique o formato do JSON.", e);
         }
     }
 }

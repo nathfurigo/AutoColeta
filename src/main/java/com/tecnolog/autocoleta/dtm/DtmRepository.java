@@ -1,13 +1,30 @@
 package com.tecnolog.autocoleta.dtm;
 
 import com.tecnolog.autocoleta.config.AppProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
 public class DtmRepository {
+
+    // --- INÍCIO DA MODIFICAÇÃO (Lógica de Horário) ---
+    private static final Logger log = LoggerFactory.getLogger(DtmRepository.class);
+    
+    // Define o fuso horário correto para a regra de negócio
+    private static final ZoneId HORARIO_COMERCIAL_ZONE_ID = ZoneId.of("America/Sao_Paulo");
+    
+    // Define a janela de operação
+    private static final int HORA_INICIO_OPERACAO = 8;  // 8:00:00
+    private static final int HORA_FIM_OPERACAO = 17; // Para em 16:59:59 (não executa às 17h)
+    // --- FIM DA MODIFICAÇÃO ---
 
     private final JdbcTemplate jdbc;
     private final String dtmView;
@@ -20,6 +37,19 @@ public class DtmRepository {
     }
 
     public List<DtmPendingRow> buscarPendentesOrdenado(int limit) {
+
+        // --- INÍCIO DA MODIFICAÇÃO (Verificação de Horário) ---
+        int currentHour = ZonedDateTime.now(HORARIO_COMERCIAL_ZONE_ID).getHour();
+        
+        if (currentHour < HORA_INICIO_OPERACAO || currentHour >= HORA_FIM_OPERACAO) {
+            log.info("Scheduler fora da janela de operação ({}h-{}h). Hora atual: {} (Horário de Brasília). Pulando busca de DTMs.",
+                     HORA_INICIO_OPERACAO, HORA_FIM_OPERACAO, currentHour);
+            
+            // Retorna uma lista vazia para que o scheduler não processe nada
+            return Collections.emptyList(); 
+        }
+        // --- FIM DA MODIFICAÇÃO ---
+
         String sql =
             "SELECT v.\"DTM\" AS id_dtm, " +
             "       v.json_pedidocoleta::text AS json_payload, " +

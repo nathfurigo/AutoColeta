@@ -501,6 +501,9 @@ public class SqlServerRepository {
         PESSOA_ALIAS_MAP.put("AEROPORTO GALEAO", "LIDER SIGNATURE S/A - GALEAO");
         PESSOA_ALIAS_MAP.put("WHITE MARTINS GASES INDUSTRIAIS LTDA - VINHEDO SP", "WHITE MARTINS");
         PESSOA_ALIAS_MAP.put("ARMAZEM AL-17", "PETROLEO BRASILEIRO S/A - PETR");
+        PESSOA_ALIAS_MAP.put("UTE IBIRITE", "PETROLEO BRASILEIRO - IBIRITE");
+        PESSOA_ALIAS_MAP.put("LOGICTEL - CIDADE NOVA", "LOGICTEL (RIO 0005-00)");
+        PESSOA_ALIAS_MAP.put("BASE MIRASSOL GUARULHOS/SP", "MIRASSOL LOGISTICA LTDA");
     }
 
     private static final Map<String, String> EMBALAGEM_KEYWORD_MAP;
@@ -659,8 +662,6 @@ private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
         
         List<Object> params = new ArrayList<>();
 
-        // Tentativa 1: Busca combinada (Mais específica)
-        // Busca por uma Pessoa que tenha a sigla da cidade E o nome exato (ignorando espaços no final)
         if (siglaBusca != null && !siglaBusca.isBlank() && nomeCompleto != null && !nomeCompleto.isBlank()) {
             String sql1 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p " + 
                           "LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade " +
@@ -680,8 +681,6 @@ private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
             }
         }
 
-        // Tentativa 2: Busca por nome completo exato (se a combinada falhar)
-        // Esta é a busca principal que deve funcionar com base nos seus dados
         if (nomeCompleto != null && !nomeCompleto.isBlank()) {
              params.clear();
              String sql2 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (RTRIM(LOWER(p.ds_Pessoa)) = ?)";
@@ -715,7 +714,6 @@ private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
         }
 
         log.warn("Nenhum Agente (Pessoa) encontrado com busca específica para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
-        // Retorna null para que o método 'fillDefaultsIfNull' possa aplicar o ID Agente padrão
         return null;
     }
 

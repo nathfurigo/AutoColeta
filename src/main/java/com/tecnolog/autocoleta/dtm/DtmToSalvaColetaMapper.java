@@ -22,10 +22,6 @@ public class DtmToSalvaColetaMapper {
     public DtmToSalvaColetaMapper(ObjectMapper om) {
         this.om = om;
     }
-
-    /**
-     * Converte o valor de metros (ex: 0.15) para centímetros (ex: 15.0).
-     */
     private Double metrosParaCentimetros(Double metros) {
         if (metros == null) {
             return null;
@@ -36,10 +32,6 @@ public class DtmToSalvaColetaMapper {
                          .doubleValue();
     }
 
-    /**
-     * Mapeia o JSON (que já está no formato SalvaColetaModel) e aplica
-     * as correções necessárias (ID da DTM e conversão de M para CM).
-     */
     public SalvaColetaModel map(DtmPendingRow row) {
         if (row == null || row.getJsonPedidoColeta() == null || row.getJsonPedidoColeta().isBlank()) {
              log.error("Tentativa de mapear DtmPendingRow nula ou com JSON vazio.");
@@ -73,10 +65,6 @@ public class DtmToSalvaColetaMapper {
             } else {
                  log.warn("DTM {}: Nenhuma dimensão encontrada no JSON.", idDtm);
             }
-
-            // --- INÍCIO DO AJUSTE PARA VLTOTALNF ---
-            // A API SalvaColeta ignora o campo vlTotalNF e soma os itens da lista NF.
-            // Se a lista NF estiver vazia e vlTotalNF > 0, criamos uma NF genérica.
             if ((model.getNf() == null || model.getNf().isEmpty()) && 
                  model.getVlTotalNF() != null && 
                  model.getVlTotalNF().compareTo(BigDecimal.ZERO) > 0) {
@@ -86,21 +74,15 @@ public class DtmToSalvaColetaMapper {
                 
                 SalvaColetaNFModel nfGenerica = new SalvaColetaNFModel();
                 
-                // *** ALTERAÇÃO SOLICITADA: Usar "0" em vez do número da DTM ***
                 nfGenerica.setNr("0");
                 
                 // Usa o valor total como o valor desta NF
                 nfGenerica.setVl(model.getVlTotalNF()); 
-                
-                // Adiciona esta NF à lista
                 List<SalvaColetaNFModel> nfs = new ArrayList<>();
                 nfs.add(nfGenerica);
                 model.setNf(nfs);
             }
-            // --- FIM DO AJUSTE ---
 
-            // 4. Forçar Agente como nulo para que o SqlServerRepository
-            // use o padrão da cidade.
             model.setDsAgenteNome(null);
             model.setDsAgenteEmail(null);
 

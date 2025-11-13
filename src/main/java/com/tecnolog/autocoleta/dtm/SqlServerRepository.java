@@ -1,6 +1,8 @@
 package com.tecnolog.autocoleta.dtm;
 
 import java.text.Normalizer;
+import java.time.LocalTime; // ADICIONADO
+import java.time.format.DateTimeFormatter; // ADICIONADO
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -883,16 +885,44 @@ private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
             model.setIdEmbalagem(33);
         }
 
-        if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) {
-            String hrInicioDefault = appProperties.getDefaults().getHrInicio();
-            model.setHrColetaInicio(hrInicioDefault != null ? hrInicioDefault : "08:00");
-            log.debug("DTM {}: HrColetaInicio definida para o padrão: {}", model.getIdDtm(), model.getHrColetaInicio());
+        // --- INÍCIO DA MODIFICAÇÃO DE HORÁRIO ---
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        String tipoColeta = model.getDsTipoColeta();
+        
+        // Verifica se é Emergência
+        if (tipoColeta != null && tipoColeta.toUpperCase().contains("EMERGÊNCIA")) {
+            // NOVA REGRA: "Hora inicial tem que ser a de agora e a final tem que ser a de agora + 6 horas"
+            LocalTime agora = LocalTime.now();
+            String hrInicioAgora = agora.format(formatter);
+            String hrFimAgoraMais6 = agora.plusHours(6).format(formatter);
+            
+            model.setHrColetaInicio(hrInicioAgora);
+            model.setHrColetaFim(hrFimAgoraMais6);
+            
+            log.info("DTM {}: REGRA DE EMERGÊNCIA (AGORA) aplicada. Início: {}, Fim: {}", 
+                      model.getIdDtm(), hrInicioAgora, hrFimAgoraMais6);
+                      
+        } else {
+            // REGRA ANTIGA (NÃO-EMERGÊNCIA): "horario inicio ser o que já vem, e o fim de acordo com a regra estabelecida"
+            
+            // 1. Hora Início (O que já vem, ou padrão)
+            if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) {
+                String hrInicioDefault = appProperties.getDefaults().getHrInicio();
+                model.setHrColetaInicio(hrInicioDefault != null ? hrInicioDefault : "08:00");
+                log.debug("DTM {}: HrColetaInicio (Não-Emergência) definida para o padrão: {}", model.getIdDtm(), model.getHrColetaInicio());
+            }
+            
+            // 2. Hora Fim (Padrão)
+            if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
+                 String hrFimDefault = appProperties.getDefaults().getHrFim();
+                 model.setHrColetaFim(hrFimDefault != null ? hrFimDefault : "16:00");
+                 log.debug("DTM {}: HrColetaFim (Não-Emergência) definida para o padrão: {}", model.getIdDtm(), model.getHrColetaFim());
+            }
         }
-        if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
-             String hrFimDefault = appProperties.getDefaults().getHrFim();
-             model.setHrColetaFim(hrFimDefault != null ? hrFimDefault : "16:00");
-             log.debug("DTM {}: HrColetaFim definida para o padrão: {}", model.getIdDtm(), model.getHrColetaFim());
-        }
+        
+        // --- FIM DA MODIFICAÇÃO DE HORÁRIO ---
+
 
         if (model.getTpModal() == null) {
             AppProperties.Defaults.Modal defaultModalEnum = appProperties.getDefaults().getModal();

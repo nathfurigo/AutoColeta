@@ -42,9 +42,9 @@ logging:
 
 app:
   scheduler:
-    batch-size: 10
+    batch-size: 50
   dtm:
-    view: "public.vw_dtm_pedidocoleta_unica"
+    view: "public.vw_dtm_pedidocoleta14"
     lock-table: "public.dtm_automation_lock"
   salvarColeta:
   #Homologação

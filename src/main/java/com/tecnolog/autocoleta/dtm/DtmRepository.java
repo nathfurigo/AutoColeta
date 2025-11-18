@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,8 +19,9 @@ public class DtmRepository {
 
     private static final Logger log = LoggerFactory.getLogger(DtmRepository.class);
     private static final ZoneId HORARIO_COMERCIAL_ZONE_ID = ZoneId.of("America/Sao_Paulo");
-    private static final int HORA_INICIO_OPERACAO = 0;  
-    private static final int HORA_FIM_OPERACAO = 23; 
+    
+    private static final LocalTime HORA_INICIO_OPERACAO = LocalTime.of(0, 0); 
+    private static final LocalTime HORA_FIM_OPERACAO = LocalTime.of(23, 59);
 
     private final JdbcTemplate jdbc;
     private final String dtmView;
@@ -32,11 +35,13 @@ public class DtmRepository {
 
     public List<DtmPendingRow> buscarPendentesOrdenado(int limit) {
 
-        int currentHour = ZonedDateTime.now(HORARIO_COMERCIAL_ZONE_ID).getHour();
+        LocalTime currentTime = ZonedDateTime.now(HORARIO_COMERCIAL_ZONE_ID).toLocalTime();
         
-        if (currentHour < HORA_INICIO_OPERACAO || currentHour >= HORA_FIM_OPERACAO) {
+        if (currentTime.isBefore(HORA_INICIO_OPERACAO) || currentTime.isAfter(HORA_FIM_OPERACAO)) {
             log.info("Scheduler fora da janela de operação ({}h-{}h). Hora atual: {} (Horário de Brasília). Pulando busca de DTMs.",
-                     HORA_INICIO_OPERACAO, HORA_FIM_OPERACAO, currentHour);
+                     HORA_INICIO_OPERACAO.format(DateTimeFormatter.ofPattern("HH:mm")), 
+                     HORA_FIM_OPERACAO.format(DateTimeFormatter.ofPattern("HH:mm")), 
+                     currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             
             return Collections.emptyList(); 
         }
@@ -53,9 +58,9 @@ public class DtmRepository {
             "    OR (l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = false) " +
             "   AND COALESCE(l.processing, false) = false" +
             " ORDER BY " +
-            "          CASE WHEN l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = FALSE THEN 0 ELSE v.prioridade_ordem END NULLS LAST, " +
-            "          v.\"Hora Coleta\" ASC, " +
-            "          v.\"DTM\" ASC " +
+            "       CASE WHEN l.coleta_gerada IS NOT NULL AND COALESCE(l.processed, false) = FALSE THEN 0 ELSE v.prioridade_ordem END NULLS LAST, " +
+            "       v.\"Hora Coleta\" ASC, " +
+            "       v.\"DTM\" ASC " +
             " LIMIT ?";
 
         return jdbc.query(sql, ps -> ps.setInt(1, limit), (rs, rowNum) -> {

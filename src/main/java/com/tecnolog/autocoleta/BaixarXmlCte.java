@@ -11,29 +11,22 @@ import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Classe ultra-simplificada para buscar UMA chave CTe em UMA tabela específica.
- */
 public class BaixarXmlCte {
 
-    // --- Constantes de Conexão ---
     private static final String SQLSERVER_SERVER = "192.168.10.251";
     private static final String SQLSERVER_PORT = "1433";
     private static final String SQLSERVER_USER = "sa";
     private static final String SQLSERVER_PASSWORD = "esl@13509";
     private static final String PASTA_RAIZ_DOWNLOAD = "C:\\XMLs_Busca_Simples\\";
-
-    // --- ALVOS DA BUSCA (Conforme solicitado) ---
     private static final String DATABASE_BUSCA = "dtbCTe2024";
     private static final String TABELA_BUSCA = "[dbo].[tbdCTeXMLMovimento11]";
 
-    //Classe para guardar resultado da busca (Simplificada)
     private static class XmlInfo {
         String xmlContent;
         String idMovimento;
         String tabelaFonte;
         String termoBusca;
-        String dtmParaSalvar; // Usaremos a chave CTe para nomear a pasta
+        String dtmParaSalvar;
 
         XmlInfo(String content, String idMov, String tabela, String termo) {
             this.xmlContent = content;
@@ -45,13 +38,8 @@ public class BaixarXmlCte {
 
     public static void main(String[] args) {
         
-        // ==================================================================
-        // ---           COLOQUE A CHAVE QUE VOCÊ QUER BUSCAR AQUI          ---
-        // ==================================================================
         String chaveCteParaBuscar = "44443333222211110000999988887777666655554444";
-        // ==================================================================
 
-        // Validação simples
         if (chaveCteParaBuscar.length() != 44 || !chaveCteParaBuscar.matches("\\d+")) {
             System.err.println("ERRO: A variável 'chaveCteParaBuscar' não parece ser uma chave CTe de 44 dígitos válida.");
             System.err.println("Por favor, edite o código e tente novamente.");
@@ -76,7 +64,6 @@ public class BaixarXmlCte {
             if (xmlEncontrado != null) {
                 System.out.println(String.format("SUCESSO! XML encontrado (ID Movimento: %s).", xmlEncontrado.idMovimento));
                 
-                // Define o nome da pasta de salvamento como a própria chave
                 xmlEncontrado.dtmParaSalvar = chaveCteParaBuscar; 
                 
                 salvarArquivo(xmlEncontrado);
@@ -98,10 +85,6 @@ public class BaixarXmlCte {
         System.out.println("Busca finalizada.");
     }
 
-    /**
-     * Procura UM termo (chave ou DTM) em UMA tabela específica.
-     * (Método original, sem alterações)
-     */
     private static XmlInfo buscarXmlEmTabelaUnica(Connection conn, String termoBusca, String nomeTabela, String dbUsado) throws SQLException {
         String termoLimpo = termoBusca.replace("\"", "").trim();
         String termoLike = "%" + termoLimpo + "%";
@@ -121,13 +104,9 @@ public class BaixarXmlCte {
             throw e; 
         }
         
-        return null; // Não encontrou
+        return null; 
     }
 
-    /**
-     * Salva o conteúdo XML em um arquivo. 
-     * (Método original, adaptado para usar a CHAVE como nome da pasta)
-     */
     private static void salvarArquivo(XmlInfo xmlInfo) { 
         String xmlContent = xmlInfo.xmlContent;
         if (xmlContent == null || xmlContent.isEmpty()) {
@@ -142,14 +121,11 @@ public class BaixarXmlCte {
 
         try {
             String chaveCteExtraida = extrairChaveDoXml(xmlContent);
-            
-            // Usa a CHAVE (que está em dtmParaSalvar) como nome da pasta
             String nomeBasePasta = xmlInfo.dtmParaSalvar.trim();
             String nomePasta = nomeBasePasta;
             String nomeArquivo;
 
             if (chaveCteExtraida != null) {
-                // Nome do arquivo = CHAVE_CHAVE.xml (um pouco redundante, mas funcional)
                 nomeArquivo = nomeBasePasta + "_" + chaveCteExtraida + ".xml";
             } else {
                 nomeArquivo = nomeBasePasta + "_semChaveNoXml.xml";
@@ -185,10 +161,6 @@ public class BaixarXmlCte {
         }
     }
 
-    /**
-     * Extrai a chave do CTe de 44 dígitos de dentro do XML.
-     * (Método original, sem alterações)
-     */
     private static String extrairChaveDoXml(String xmlContent) {
         if (xmlContent == null || xmlContent.isEmpty()) return null;
         try {

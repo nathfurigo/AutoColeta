@@ -85,11 +85,12 @@ public class DtmProcessingService {
             if (requestPayload.getIdNaturezaCarga() == null) missingFields.add("idNaturezaCarga");
             if (requestPayload.getIdEmbalagem() == null) missingFields.add("idEmbalagem");
             
+            if (requestPayload.getIdEnderecoCidade() == null) missingFields.add("idEnderecoCidade");
+            
             if (!missingFields.isEmpty()) {
                 throw new IllegalStateException("Falha de enriquecimento de dados. IDs ausentes: " + String.join(", ", missingFields));
             }
 
-            // Log: Exibe o payload FINAL que será enviado, incluindo as dimensões corrigidas (multiplicadas por 100)
             log.debug("Payload FINAL enviado para SalvarColeta {}: {}", idDtm, safeJson(requestPayload));
 
             SalvarColetaResponse response = salvarColetaClient.salvar(requestPayload);

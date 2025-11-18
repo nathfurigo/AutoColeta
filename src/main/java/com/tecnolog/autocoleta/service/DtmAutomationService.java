@@ -28,7 +28,6 @@ public class DtmAutomationService {
         this.processingService = processingService;
     }
 
-    @Transactional
     public Map<String, Integer> processBatch(int limit) {
         List<DtmPendingRow> pendentes = dtmRepository.buscarPendentesOrdenado(limit);
         if (pendentes == null || pendentes.isEmpty()) {

@@ -12,58 +12,60 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {
 
-    @JsonProperty("idDtm")              private Long idDtm;
-    @JsonProperty("TokenHash")          private String tokenHash;
-    @JsonProperty("idPedidoColeta")     private Integer idPedidoColeta;
-    @JsonProperty("idRemetente")        private Integer idRemetente;
-    @JsonProperty("idDestinatario")     private Integer idDestinatario;
-    @JsonProperty("idTomador")          private Integer idTomador;
+    @JsonProperty("idDtm")            private Long idDtm;
+    @JsonProperty("TokenHash")        private String tokenHash;
+    @JsonProperty("idPedidoColeta")   private Integer idPedidoColeta;
+    @JsonProperty("idRemetente")      private Integer idRemetente;
+    @JsonProperty("idDestinatario")   private Integer idDestinatario;
+    @JsonProperty("idTomador")        private Integer idTomador;
     @JsonProperty("idFilialResposavel") private Integer idFilialResposavel = 135; 
-    @JsonProperty("idLocalColeta")      private Integer idLocalColeta;
-    @JsonProperty("dsRemetente")        private String dsRemetente;
-    @JsonProperty("cdRemetenteCnpj")    private String cdRemetenteCnpj;
-    @JsonProperty("dsDestinatario")     private String dsDestinatario;
+    @JsonProperty("idLocalColeta")    private Integer idLocalColeta;
+    @JsonProperty("dsRemetente")      private String dsRemetente;
+    @JsonProperty("cdRemetenteCnpj")  private String cdRemetenteCnpj;
+    @JsonProperty("dsDestinatario")   private String dsDestinatario;
     @JsonProperty("cdDestinatarioCnpj") private String cdDestinatarioCnpj;
-    @JsonProperty("dsTomador")          private String dsTomador;
-    @JsonProperty("cdTomadorCnpj")      private String cdTomadorCnpj;
+    @JsonProperty("dsTomador")        private String dsTomador;
+    @JsonProperty("cdTomadorCnpj")    private String cdTomadorCnpj;
     @JsonProperty("dtColeta")   @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtColeta;
 
-    @JsonProperty("hrColetaInicio")     private String hrColetaInicio;
-    @JsonProperty("hrColetaFim")        private String hrColetaFim;
+    @JsonProperty("hrColetaInicio")   private String hrColetaInicio;
+    @JsonProperty("hrColetaFim")      private String hrColetaFim;
     @JsonProperty("dtEntrega")  @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtEntrega;
 
-    @JsonProperty("tpModal")            private Modal tpModal;
-    @JsonProperty("dsEndereco")         private String dsEndereco;
-    @JsonProperty("nrEnderecoNR")       private String nrEnderecoNR;
-    @JsonProperty("dsEnderecoBairro")   private String dsEnderecoBairro;
+    @JsonProperty("tpModal")          private Modal tpModal;
+    @JsonProperty("dsEndereco")       private String dsEndereco;
+    @JsonProperty("nrEnderecoNR")     private String nrEnderecoNR;
+    @JsonProperty("dsEnderecoBairro")  private String dsEnderecoBairro;
     @JsonProperty("dsEnderecoComplento")private String dsEnderecoComplento;
-    @JsonProperty("cdEnderecoCEP")      private String cdEnderecoCEP;
-    @JsonProperty("idEnderecoCidade")   private Integer idEnderecoCidade; 
-    @JsonProperty("dsSolicitante")      private String dsSolicitante;
-    @JsonProperty("dsSolicitanteNome")  private String dsSolicitanteNome;
-    @JsonProperty("dsProcurarPor")      private String dsProcurarPor;
-    @JsonProperty("nrTelefone")         private String nrTelefone;
-    @JsonProperty("idTipoColeta")       private Integer idTipoColeta;
-    @JsonProperty("idAgente")           private Integer idAgente;
-    @JsonProperty("idEmbalagem")        private Integer idEmbalagem;
-    @JsonProperty("idNaturezaCarga")    private Integer idNaturezaCarga;
-    @JsonProperty("dsAgente")           private String dsAgenteNome;
-    @JsonProperty("dsAgenteEmail")      private String dsAgenteEmail; 
-    @JsonProperty("dsTipoColeta")       private String dsTipoColeta; 
-    @JsonProperty("dsEmbalagem")        private String dsEmbalagem; 
-    @JsonProperty("dsNaturezaCarga")    private String dsNaturezaCarga; 
-    @JsonProperty("nrReferencia")       private String nrReferencia;
-    @JsonProperty("nrPedidoCliente")    private String nrPedidoCliente;
-    @JsonProperty("vlTotalNF")          private BigDecimal vlTotalNF;
-    @JsonProperty("dsCidadeColeta")     private String dsCidadeColeta;     
-    @JsonProperty("dsCidadeColetaUF")   private String dsCidadeColetaUF;   
-    @JsonProperty("dsCidadeDestino")    private String dsCidadeDestino;    
-    @JsonProperty("NF")                 private List<SalvaColetaNFModel> nf;
-    @JsonProperty("Dimensoes")          private List<SalvaColetaDimensoesModel> dimensoes;
-    @JsonProperty("Monitoramento")      private List<SalvaColetaMonitoramentoModel> monitoramento;
-    @JsonProperty("dsComentarios")      private String dsComentarios;
+    @JsonProperty("cdEnderecoCEP")    private String cdEnderecoCEP;
+    @JsonProperty("idEnderecoCidade")  private Integer idEnderecoCidade; 
+    @JsonProperty("dsSolicitante")    private String dsSolicitante;
+    @JsonProperty("dsSolicitanteNome") private String dsSolicitanteNome;
+    @JsonProperty("dsProcurarPor")    private String dsProcurarPor;
+    @JsonProperty("nrTelefone")       private String nrTelefone;
+    @JsonProperty("idTipoColeta")     private Integer idTipoColeta;
+    @JsonProperty("idAgente")         private Integer idAgente;
+    @JsonProperty("idEmbalagem")      private Integer idEmbalagem;
+    @JsonProperty("idNaturezaCarga")  private Integer idNaturezaCarga;
+    @JsonProperty("dsAgente")         private String dsAgenteNome;
+    @JsonProperty("dsAgenteEmail")    private String dsAgenteEmail; 
+    @JsonProperty("dsTipoColeta")     private String dsTipoColeta; 
+    @JsonProperty("dsEmbalagem")      private String dsEmbalagem; 
+    @JsonProperty("dsNaturezaCarga")  private String dsNaturezaCarga; 
+    @JsonProperty("nrReferencia")     private String nrReferencia;
+    @JsonProperty("nrPedidoCliente")  private String nrPedidoCliente;
+    @JsonProperty("vlTotalNF")        private BigDecimal vlTotalNF;
+    @JsonProperty("dsCidadeColeta")   private String dsCidadeColeta;    
+    @JsonProperty("dsCidadeColetaUF") private String dsCidadeColetaUF;  
+    @JsonProperty("dsCidadeDestino")  private String dsCidadeDestino;   
+    @JsonProperty("NF")               private List<SalvaColetaNFModel> nf;
+    @JsonProperty("Dimensoes")        private List<SalvaColetaDimensoesModel> dimensoes;
+    @JsonProperty("Monitoramento")    private List<SalvaColetaMonitoramentoModel> monitoramento;
+    @JsonProperty("dsComentarios")    private String dsComentarios;
+    @JsonProperty("isAgendamentoFixo")
+    private boolean isAgendamentoFixo;
 
     public Long getIdDtm() { return idDtm; }
     public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
@@ -161,4 +163,11 @@ public class SalvaColetaModel {
     public void setDsCidadeColetaUF(String dsCidadeColetaUF) { this.dsCidadeColetaUF = dsCidadeColetaUF; }
     public String getDsCidadeDestino() { return dsCidadeDestino; }
     public void setDsCidadeDestino(String dsCidadeDestino) { this.dsCidadeDestino = dsCidadeDestino; }
+
+    public boolean isAgendamentoFixo() {
+        return isAgendamentoFixo;
+    }
+    public void setAgendamentoFixo(boolean isAgendamentoFixo) {
+        this.isAgendamentoFixo = isAgendamentoFixo;
+    }
 }

@@ -23,15 +23,26 @@ import com.tecnolog.autocoleta.config.AppProperties;
 import com.tecnolog.autocoleta.domain.Modal;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
 
+/**
+ * Repositório responsável pela interação com o banco de dados SQL Server legado.
+ * Suas principais responsabilidades são:
+ * 1. Carregar caches de mapeamento (De-Para) para performance.
+ * 2. Buscar IDs de entidades (Pessoas, Cidades, Agentes) baseados em strings soltas.
+ * 3. Enriquecer o modelo SalvaColetaModel com dados que faltam na DTM original.
+ */
 @Repository
 public class SqlServerRepository {
 
     private static final Logger log = LoggerFactory.getLogger(SqlServerRepository.class);
     private final JdbcTemplate jdbc;
     private final AppProperties appProperties;
+    
+    // Utilitários para limpeza de CNPJ e Timezone
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^\\d]");
     private static final ZoneId SAO_PAULO_ZONE_ID = ZoneId.of("America/Sao_Paulo");
 
+    // --- CACHES EM MEMÓRIA ---
+    // Evitam ir ao banco repetidamente para tabelas de configuração que mudam pouco.
     private List<NaturezaMapping> cacheMapeamentoNatureza = Collections.emptyList();
     private record NaturezaMapping(String keywordUpper, int targetId) {}
 
@@ -48,12 +59,17 @@ public class SqlServerRepository {
         this.jdbc = jdbc;
         this.appProperties = appProperties;
         
+        // Carregamento inicial dos caches ao subir a aplicação
         carregarCacheMapeamentoNatureza();
         carregarCacheMapeamentoCidadeAgente();
         carregarCachePessoaAlias();
         carregarCacheMapeamentoEmbalagem();
     }
 
+    /**
+     * Carrega regras de De-Para de Natureza da Carga.
+     * Ex: Se encontrar "CONFECCOES" no texto, usa o ID X.
+     */
     private void carregarCacheMapeamentoNatureza() {
         String sql = "SELECT ds_PalavraChave, id_NaturezaMercadoria_Alvo FROM tbdMapeamentoNatureza ORDER BY nr_Prioridade ASC";
         try {
@@ -69,6 +85,10 @@ public class SqlServerRepository {
         }
     }
 
+    /**
+     * Carrega mapeamento de Cidade -> Agente.
+     * Útil quando não sabemos o nome do agente, mas sabemos quem atende aquela cidade.
+     */
     private void carregarCacheMapeamentoCidadeAgente() {
         String sql = "SELECT ds_ChaveCidade, id_Pessoa_Agente_Alvo FROM tbdMapeamentoCidadeAgente";
         try {
@@ -84,6 +104,11 @@ public class SqlServerRepository {
         }
     }
 
+    /**
+     * Carrega apelidos de empresas.
+     * Ex: "PETROBRAS" -> "PETROLEO BRASILEIRO S.A."
+     * Ajuda a encontrar o ID correto quando o nome vem informal.
+     */
     private void carregarCachePessoaAlias() {
         String sql = "SELECT ds_Alias, ds_NomeAlvo FROM tbdMapeamentoPessoaAlias";
         try {
@@ -115,6 +140,10 @@ public class SqlServerRepository {
         }
     }
 
+    /**
+     * Verifica se já existe um Pedido de Coleta gerado para esta DTM.
+     * Busca por: Referência, PedidoCliente ou ID da DTM no campo de observação/controle.
+     */
     public Integer findExistingColetaIdByDtm(String dtmId) {
         if (dtmId == null || dtmId.isBlank()) {
             return null;
@@ -133,22 +162,33 @@ public class SqlServerRepository {
         }
     }
 
+    /**
+     * Método Principal de Enriquecimento.
+     * Recebe o modelo parcial e tenta descobrir os IDs de banco (foreign keys) 
+     * para todas as descrições textuais.
+     */
     public void preencherDadosFaltantes(SalvaColetaModel model) {
 
+        // 1. Identificação de Pessoas (Remetente, Destinatário, Tomador)
         model.setIdRemetente(findPessoaId(model.getDsRemetente(), model.getCdRemetenteCnpj()));
         model.setIdDestinatario(findPessoaId(model.getDsDestinatario(), model.getCdDestinatarioCnpj()));
         model.setIdTomador(findPessoaId(model.getDsTomador(), model.getCdTomadorCnpj()));
 
+        // 2. Regra de Local de Coleta (se vazio, assume Remetente)
         if (model.getIdLocalColeta() == null) {
             model.setIdLocalColeta(model.getIdRemetente());
         }
 
+        // 3. Identificação da Cidade da Coleta
         if (model.getIdEnderecoCidade() == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
              model.setIdEnderecoCidade(findCidadeIdByName(model.getDsCidadeColeta()));
         }
 
+        // 4. Estratégia de Busca do Agente
+        // Primeiro tenta pelo Nome ou E-mail vindo da DTM
         Integer agenteId = findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail());
 
+        // Se falhar, tenta descobrir o agente baseado na CIDADE de coleta (fallback via cache)
         if (agenteId == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
             log.info("DTM {}: Agente não encontrado pelo nome ({}). Tentando busca pela cidade de coleta ({})",
                     model.getIdDtm(), model.getDsAgenteNome(), model.getDsCidadeColeta());
@@ -166,11 +206,13 @@ public class SqlServerRepository {
         }
         
         model.setIdAgente(agenteId); 
-        model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         
+        // 5. Identificação de Tipos e Características da Carga
+        model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem())); 
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
 
+        // 6. Fallback: Se não achou Embalagem/Natureza, tenta pegar o padrão cadastrado no Remetente
         if (model.getIdRemetente() != null && (model.getIdEmbalagem() == null || model.getIdNaturezaCarga() == null)) {
             try {
                 String sql = "SELECT id_Embalagem, id_NaturezaMercadoria FROM tbdRemetente WHERE id_Remetente = ?";
@@ -184,9 +226,17 @@ public class SqlServerRepository {
                 log.warn("DTM {}: Nenhuma configuração padrão de Embalagem/Natureza encontrada para o remetente ID {}.", model.getIdDtm(), model.getIdRemetente());
             }
         }
+        
+        // 7. Preenche padrões finais (defaults) e ajusta horários
         fillDefaultsIfNull(model);
     }
 
+    /**
+     * Busca ID do Agente com lógica de tentativas:
+     * 1. Sigla + Nome (Ex: "SAO - Fulano")
+     * 2. Nome Completo Exato
+     * 3. E-mail
+     */
     private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
         if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) {
             log.debug("Nenhum nome ou email fornecido para buscar o Agente.");
@@ -197,6 +247,7 @@ public class SqlServerRepository {
         String nomeCompleto = nome;
         String nomeApenas = nome;     
 
+        // Tenta separar "SAO - Nome"
         if (nome != null && nome.contains(" - ")) {
             try {
                 String[] parts = nome.split(" - ", 2);
@@ -212,6 +263,7 @@ public class SqlServerRepository {
         
         List<Object> params = new ArrayList<>();
 
+        // Tentativa 1: Sigla da Cidade + Nome
         if (siglaBusca != null && !siglaBusca.isBlank() && nomeCompleto != null && !nomeCompleto.isBlank()) {
             String sql1 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p " + 
                           "LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade " +
@@ -231,6 +283,7 @@ public class SqlServerRepository {
             }
         }
 
+        // Tentativa 2: Nome Completo
         if (nomeCompleto != null && !nomeCompleto.isBlank()) {
              params.clear();
              String sql2 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (RTRIM(LOWER(p.ds_Pessoa)) = ?)";
@@ -247,6 +300,7 @@ public class SqlServerRepository {
             }
         }
         
+        // Tentativa 3: E-mail
         if (email != null && !email.isBlank()) {
              params.clear();
              String sql3 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (LOWER(p.cd_Email) = ?)";
@@ -256,31 +310,63 @@ public class SqlServerRepository {
                 Integer id = jdbc.queryForObject(sql3, Integer.class, params.toArray());
                 log.info("ID do Agente (Pessoa) encontrado com busca [Email]: {} (busca por email='{}')", id, email);
                 return id;
-            } catch (EmptyResultDataAccessException e) {
+             } catch (EmptyResultDataAccessException e) {
                 log.debug("Nenhum Agente (Pessoa) encontrado com busca [Email]. Tentando próxima.");
-            } catch (Exception e) {
+             } catch (Exception e) {
                 log.error("Erro ao executar busca [Email] de Agente: {}", e.getMessage(), e);
-            }
+             }
         }
 
         log.warn("Nenhum Agente (Pessoa) encontrado com busca específica para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
         return null;
     }
 
+    /**
+     * Busca genérica de Pessoa (Cliente/Fornecedor).
+     * Prioridade:
+     * 1. CNPJ (Busca exata, mais segura).
+     * 2. Nome/Razão Social (Busca aproximada com LIKE, usa cache de apelidos).
+     */
     private Integer findPessoaId(String nome, String cnpj) {
         if ((nome == null || nome.isBlank()) && (cnpj == null || cnpj.isBlank())) {
             return null;
         }
 
+        // -----------------------------------------------------------------------
+        // 1. PRIORIDADE ALTA: Busca pelo CNPJ (Mais exato e performático)
+        // -----------------------------------------------------------------------
+        if (cnpj != null && !cnpj.isBlank()) {
+            try {
+                // Remove caracteres não numéricos (pontuação)
+                String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
+                
+                // Query exata pelo campo cd_CGCCPF
+                String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
+                
+                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
+                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
+                return id;
+            } catch (EmptyResultDataAccessException e) {
+                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Tentando busca pelo Nome/Apelido...", cnpj);
+            } catch (Exception e) {
+                log.error("Erro ao buscar Pessoa pelo CNPJ '{}': {}", cnpj, e.getMessage());
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        // 2. PRIORIDADE BAIXA: Busca pelo Nome (Fallback)
+        // -----------------------------------------------------------------------
         if (nome != null && !nome.isBlank()) {
             String nomeBusca = nome;
             String nomeUpper = nome.toUpperCase();
 
+            // Verifica se há apelido no cache antes de buscar
             if (cachePessoaAlias.containsKey(nomeUpper)) {
                 nomeBusca = cachePessoaAlias.get(nomeUpper);
                 log.info("Apelido de Pessoa (do cache DB) '{}' traduzido para busca como '{}'", nome, nomeBusca);
             }
 
+            // Busca por Nome (ds_Pessoa) ou Razão Social (ds_RazaoSocial) usando LIKE
             String sqlNome = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE (LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)";
             List<Object> params = new ArrayList<>();
             params.add("%" + nomeBusca.toLowerCase() + "%");
@@ -291,19 +377,7 @@ public class SqlServerRepository {
                 log.info("ID de Pessoa encontrado via Nome/Apelido: {} (para nome='{}')", id, nome);
                 return id;
             } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o Nome/Apelido '{}'. Prosseguindo para buscar pelo CNPJ.", nome);
-            }
-        }
-
-        if (cnpj != null && !cnpj.isBlank()) {
-            try {
-                String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
-                String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
-                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
-                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
-                return id;
-            } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}' (após falha na busca por nome, se aplicável).", cnpj);
+                log.warn("Nenhuma Pessoa encontrada para o Nome/Apelido '{}' (e busca por CNPJ falhou ou não foi possível).", nome);
             }
         }
 
@@ -316,6 +390,7 @@ public class SqlServerRepository {
 
         String nomeOrigemUpper = nomeOrigem.toUpperCase();
         
+        // 1. Tenta achar no cache de mapeamento (Keyword)
         for (EmbalagemMapping mapping : this.cacheMapeamentoEmbalagem) {
             if (nomeOrigemUpper.contains(mapping.keywordUpper())) {
                 log.info("Mapeamento de embalagem (do cache DB) encontrado: '{}' -> ID {}", nomeOrigem, mapping.targetId());
@@ -323,6 +398,7 @@ public class SqlServerRepository {
             }
         }
 
+        // 2. Se não achar, vai no banco com LIKE
         log.warn("Não foi encontrado mapeamento de keyword (do cache DB) para a embalagem '{}'. Tentando busca direta por LIKE.", nomeOrigem);
         try {
             String sql = "SELECT TOP 1 id_Embalagem FROM tbdEmbalagem WHERE LOWER(ds_Embalagem) COLLATE Latin1_General_CI_AI LIKE ?";
@@ -342,6 +418,7 @@ public class SqlServerRepository {
 
         String nomeOrigemUpper = nomeOrigem.toUpperCase();
 
+        // 1. Tenta achar no cache de mapeamento (Keyword)
         for (NaturezaMapping mapping : this.cacheMapeamentoNatureza) {
             if (nomeOrigemUpper.contains(mapping.keywordUpper())) {
                 log.info("Mapeamento de natureza (do cache DB) encontrado: '{}' -> ID {}", nomeOrigem, mapping.targetId());
@@ -349,6 +426,7 @@ public class SqlServerRepository {
             }
         }
 
+        // 2. Se não achar, vai no banco com LIKE
         log.warn("Não foi encontrado mapeamento de keyword (do cache DB) para a natureza '{}'. Tentando busca direta por LIKE.", nomeOrigem);
         try {
             String sql = "SELECT TOP 1 id_NaturezaMercadoria FROM tbdNaturezaMercadoria WHERE LOWER(ds_NaturezaMercadoria) COLLATE Latin1_General_CI_AI LIKE ?";
@@ -364,6 +442,7 @@ public class SqlServerRepository {
         if (nome == null || nome.isBlank()) return null;
 
         String termoBusca = nome.toUpperCase();
+        // Ajuste gramatical simples (remove 'O' ou 'A' final) para melhorar o LIKE
         if (termoBusca.endsWith("O") || termoBusca.endsWith("A")) {
             termoBusca = termoBusca.substring(0, termoBusca.length() - 1);
         }
@@ -382,6 +461,7 @@ public class SqlServerRepository {
             return null;
         }
         
+        // Limpeza: remove barra de estado (Ex: "Guarulhos/SP" -> "Guarulhos")
         String trimmedCityName = cityName.trim();
         if (trimmedCityName.contains("/")) {
             trimmedCityName = trimmedCityName.split("/")[0].trim();
@@ -405,6 +485,10 @@ public class SqlServerRepository {
         }
     }
 
+    /**
+     * Preenche IDs obrigatórios com defaults (do application.properties) caso ainda estejam nulos,
+     * e aplica regras de horários para Coletas Emergenciais.
+     */
     private void fillDefaultsIfNull(SalvaColetaModel model) {
         if (model.getIdRemetente() == null) model.setIdRemetente(appProperties.getDefaults().getIdRemetente());
         if (model.getIdDestinatario() == null) model.setIdDestinatario(appProperties.getDefaults().getIdDestinatario());
@@ -413,6 +497,8 @@ public class SqlServerRepository {
         if (model.getIdLocalColeta() == null) model.setIdLocalColeta(appProperties.getDefaults().getIdLocalColeta());
         
         if (model.getIdTipoColeta() == null) model.setIdTipoColeta(appProperties.getDefaults().getIdTipoColetaDefault());
+        
+        // Fallback final de agente se a busca por cidade falhou
         if (model.getIdAgente() == null) {
             log.warn("DTM {}: Agente não encontrado por nome nem por cidade de coleta. Aplicando agente padrão (ID: {}).", model.getIdDtm(), appProperties.getDefaults().getIdAgente());
             model.setIdAgente(appProperties.getDefaults().getIdAgente());
@@ -427,7 +513,7 @@ public class SqlServerRepository {
             model.setIdEmbalagem(33);
         }
 
-        
+        // --- REGRA DE HORÁRIOS DE COLETA ---
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         String tipoColeta = model.getDsTipoColeta();
         LocalDate dtColeta = model.getDtColeta();
@@ -435,6 +521,8 @@ public class SqlServerRepository {
         
         boolean isEmergencia = tipoColeta != null && tipoColeta.toUpperCase().contains("EMERGÊNCIA");
         
+        // CASO 1: Emergência para HOJE
+        // Regra: Início = Agora, Fim = Agora + 6 horas
         if (isEmergencia && dtColeta != null && dtColeta.isEqual(hoje)) {
             LocalTime agora = LocalTime.now(SAO_PAULO_ZONE_ID);
             String hrInicioAgora = agora.format(formatter);
@@ -447,6 +535,7 @@ public class SqlServerRepository {
                       model.getIdDtm(), hrInicioAgora, hrFimAgoraMais6);
                       
         } else {
+            // CASO 2: Coleta Normal ou Emergência Futura (mantém horários se já vieram, senão aplica defaults)
             
             if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) {
                 model.setHrColetaInicio("08:00");
@@ -472,6 +561,7 @@ public class SqlServerRepository {
             }
         }
         
+        // Validação final de Modal (Rodoviário/Aéreo)
         if (model.getTpModal() == null) {
             AppProperties.Defaults.Modal defaultModalEnum = appProperties.getDefaults().getModal();
             if (defaultModalEnum != null) {
@@ -489,12 +579,17 @@ public class SqlServerRepository {
         }
     }
     
+    /**
+     * Tenta encontrar o ID de um Agente mapeado para uma cidade específica.
+     * Útil quando o nome do agente não veio na DTM.
+     */
     private Integer findAgenteIdByCidadeColeta(String cidadeColeta) {
         String cidadeNormalizada = normalizarString(cidadeColeta);
         if (cidadeNormalizada == null) {
             return null;
         }
         
+        // 1. Busca Exata
         for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
             if (mapping.chaveCidadeUpper().equals(cidadeNormalizada)) {
                 log.debug("Mapeamento de agente por cidade (cache DB, chave exata) encontrado: '{}' -> ID {}", cidadeNormalizada, mapping.targetAgenteId());
@@ -502,6 +597,7 @@ public class SqlServerRepository {
             }
         }
 
+        // 2. Busca por prefixo (para casos como "Sao Paulo" mapeando "Sao Paulo/SP")
         if (!cidadeNormalizada.contains("/")) {
             String cidadeComBarra = cidadeNormalizada + "/";
             for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
@@ -512,6 +608,7 @@ public class SqlServerRepository {
             }
         }
         
+        // 3. Busca ampla (Contains) - menos precisa
         for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
              if (mapping.chaveCidadeUpper().contains(cidadeNormalizada)) {
                 log.warn("Mapeamento de agente por cidade (cache DB, 'contains', menos preciso) encontrado: Cidade '{}' corresponde à chave '{}' do mapa.", cidadeNormalizada, mapping.chaveCidadeUpper());

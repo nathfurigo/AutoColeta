@@ -23,13 +23,6 @@ import com.tecnolog.autocoleta.config.AppProperties;
 import com.tecnolog.autocoleta.domain.Modal;
 import com.tecnolog.autocoleta.dto.salvarcoleta.SalvaColetaModel;
 
-/**
- * Repositório responsável pela interação com o banco de dados SQL Server legado.
- * Suas principais responsabilidades são:
- * 1. Carregar caches de mapeamento (De-Para) para performance.
- * 2. Buscar IDs de entidades (Pessoas, Cidades, Agentes) baseados em strings soltas.
- * 3. Enriquecer o modelo SalvaColetaModel com dados que faltam na DTM original.
- */
 @Repository
 public class SqlServerRepository {
 
@@ -37,12 +30,9 @@ public class SqlServerRepository {
     private final JdbcTemplate jdbc;
     private final AppProperties appProperties;
     
-    // Utilitários para limpeza de CNPJ e Timezone
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^\\d]");
     private static final ZoneId SAO_PAULO_ZONE_ID = ZoneId.of("America/Sao_Paulo");
 
-    // --- CACHES EM MEMÓRIA ---
-    // Evitam ir ao banco repetidamente para tabelas de configuração que mudam pouco.
     private List<NaturezaMapping> cacheMapeamentoNatureza = Collections.emptyList();
     private record NaturezaMapping(String keywordUpper, int targetId) {}
 
@@ -59,136 +49,76 @@ public class SqlServerRepository {
         this.jdbc = jdbc;
         this.appProperties = appProperties;
         
-        // Carregamento inicial dos caches ao subir a aplicação
         carregarCacheMapeamentoNatureza();
         carregarCacheMapeamentoCidadeAgente();
         carregarCachePessoaAlias();
         carregarCacheMapeamentoEmbalagem();
     }
 
-    /**
-     * Carrega regras de De-Para de Natureza da Carga.
-     * Ex: Se encontrar "CONFECCOES" no texto, usa o ID X.
-     */
     private void carregarCacheMapeamentoNatureza() {
         String sql = "SELECT ds_PalavraChave, id_NaturezaMercadoria_Alvo FROM tbdMapeamentoNatureza ORDER BY nr_Prioridade ASC";
         try {
-            this.cacheMapeamentoNatureza = jdbc.query(sql, (rs, rowNum) -> 
-                new NaturezaMapping(
-                    rs.getString("ds_PalavraChave").toUpperCase(), 
-                    rs.getInt("id_NaturezaMercadoria_Alvo")
-                )
-            );
-            log.info("Cache de Mapeamento de Natureza carregado com {} regras.", this.cacheMapeamentoNatureza.size());
-        } catch (Exception e) {
-            log.error("FALHA CRÍTICA AO CARREGAR CACHE DE MAPEAMENTO DE NATUREZA.", e);
-        }
+            this.cacheMapeamentoNatureza = jdbc.query(sql, (rs, rowNum) -> new NaturezaMapping(rs.getString("ds_PalavraChave").toUpperCase(), rs.getInt("id_NaturezaMercadoria_Alvo")));
+        } catch (Exception e) { log.error("Erro cache natureza", e); }
     }
 
-    /**
-     * Carrega mapeamento de Cidade -> Agente.
-     * Útil quando não sabemos o nome do agente, mas sabemos quem atende aquela cidade.
-     */
     private void carregarCacheMapeamentoCidadeAgente() {
         String sql = "SELECT ds_ChaveCidade, id_Pessoa_Agente_Alvo FROM tbdMapeamentoCidadeAgente";
         try {
-            this.cacheMapeamentoCidadeAgente = jdbc.query(sql, (rs, rowNum) -> 
-                new CidadeAgenteMapping(
-                    rs.getString("ds_ChaveCidade").toUpperCase(),
-                    rs.getInt("id_Pessoa_Agente_Alvo")
-                )
-            );
-            log.info("Cache de Mapeamento de Cidade/Agente carregado com {} regras.", this.cacheMapeamentoCidadeAgente.size());
-        } catch (Exception e) {
-            log.error("FALHA CRÍTICA AO CARREGAR CACHE DE MAPEAMENTO DE CIDADE/AGENTE.", e);
-        }
+            this.cacheMapeamentoCidadeAgente = jdbc.query(sql, (rs, rowNum) -> new CidadeAgenteMapping(rs.getString("ds_ChaveCidade").toUpperCase(), rs.getInt("id_Pessoa_Agente_Alvo")));
+        } catch (Exception e) { log.error("Erro cache cidade agente", e); }
     }
 
-    /**
-     * Carrega apelidos de empresas.
-     * Ex: "PETROBRAS" -> "PETROLEO BRASILEIRO S.A."
-     * Ajuda a encontrar o ID correto quando o nome vem informal.
-     */
     private void carregarCachePessoaAlias() {
         String sql = "SELECT ds_Alias, ds_NomeAlvo FROM tbdMapeamentoPessoaAlias";
         try {
-            this.cachePessoaAlias = jdbc.query(sql, (rs, rowNum) -> 
-                Map.entry(
-                    rs.getString("ds_Alias").toUpperCase(),
-                    rs.getString("ds_NomeAlvo")
-                )
-            ).stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            
-            log.info("Cache de Mapeamento de Apelidos (Pessoa Alias) carregado com {} regras.", this.cachePessoaAlias.size());
-        } catch (Exception e) {
-            log.error("FALHA CRÍTICA AO CARREGAR CACHE DE MAPEAMENTO DE APELIDOS (PESSOA ALIAS).", e);
-        }
+            this.cachePessoaAlias = jdbc.query(sql, (rs, rowNum) -> Map.entry(rs.getString("ds_Alias").toUpperCase(), rs.getString("ds_NomeAlvo"))).stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        } catch (Exception e) { log.error("Erro cache alias", e); }
     }
 
     private void carregarCacheMapeamentoEmbalagem() {
         String sql = "SELECT ds_PalavraChave, id_Embalagem_Alvo FROM tbdMapeamentoEmbalagem ORDER BY nr_Prioridade ASC";
         try {
-            this.cacheMapeamentoEmbalagem = jdbc.query(sql, (rs, rowNum) -> 
-                new EmbalagemMapping(
-                    rs.getString("ds_PalavraChave").toUpperCase(), 
-                    rs.getInt("id_Embalagem_Alvo")
-                )
-            );
-            log.info("Cache de Mapeamento de Embalagem carregado com {} regras.", this.cacheMapeamentoEmbalagem.size());
-        } catch (Exception e) {
-            log.error("FALHA CRÍTICA AO CARREGAR CACHE DE MAPEAMENTO DE EMBALAGEM.", e);
-        }
+            this.cacheMapeamentoEmbalagem = jdbc.query(sql, (rs, rowNum) -> new EmbalagemMapping(rs.getString("ds_PalavraChave").toUpperCase(), rs.getInt("id_Embalagem_Alvo")));
+        } catch (Exception e) { log.error("Erro cache embalagem", e); }
     }
 
-    /**
-     * Verifica se já existe um Pedido de Coleta gerado para esta DTM.
-     * Busca por: Referência, PedidoCliente ou ID da DTM no campo de observação/controle.
-     */
     public Integer findExistingColetaIdByDtm(String dtmId) {
-        if (dtmId == null || dtmId.isBlank()) {
-            return null;
-        }
-        String sql = """
-            SELECT TOP 1 pc.id_PedidoColeta
-            FROM tbdPedidoColeta pc
-            LEFT JOIN tbdItemPedidoColeta ipc ON pc.id_PedidoColeta = ipc.id_PedidoColeta
-            WHERE ipc.nr_Referencia = ? OR ipc.nr_PedidoCliente = ? OR pc.cm_PedidoColeta LIKE ?
-            """;
+        if (dtmId == null || dtmId.isBlank()) return null;
+        String sql = "SELECT TOP 1 pc.id_PedidoColeta FROM tbdPedidoColeta pc LEFT JOIN tbdItemPedidoColeta ipc ON pc.id_PedidoColeta = ipc.id_PedidoColeta WHERE ipc.nr_Referencia = ? OR ipc.nr_PedidoCliente = ? OR pc.cm_PedidoColeta LIKE ?";
         try {
             return jdbc.queryForObject(sql, Integer.class, dtmId, dtmId, "%" + dtmId + "%");
-        } catch (EmptyResultDataAccessException e) {
-            log.debug("Nenhuma coleta existente encontrada para a DTM {}", dtmId);
-            return null;
-        }
+        } catch (EmptyResultDataAccessException e) { return null; }
     }
 
-    /**
-     * Método Principal de Enriquecimento.
-     * Recebe o modelo parcial e tenta descobrir os IDs de banco (foreign keys) 
-     * para todas as descrições textuais.
-     */
     public void preencherDadosFaltantes(SalvaColetaModel model) {
 
-        // 1. Identificação de Pessoas (Remetente, Destinatário, Tomador)
         model.setIdRemetente(findPessoaId(model.getDsRemetente(), model.getCdRemetenteCnpj()));
-        model.setIdDestinatario(findPessoaId(model.getDsDestinatario(), model.getCdDestinatarioCnpj()));
         model.setIdTomador(findPessoaId(model.getDsTomador(), model.getCdTomadorCnpj()));
 
-        // 2. Regra de Local de Coleta (se vazio, assume Remetente)
+        Integer idDestinatario = findPessoaIdRestritoCidade(
+            model.getDsDestinatario(), 
+            model.getCdDestinatarioCnpj(), 
+            model.getDsCidadeDestino()
+        );
+        
+        if (idDestinatario != null) {
+            model.setIdDestinatario(idDestinatario);
+        } else {
+            log.warn("DTM {}: Destinatário não encontrado na cidade '{}'. Tentando busca genérica...", model.getIdDtm(), model.getDsCidadeDestino());
+            model.setIdDestinatario(findPessoaId(model.getDsDestinatario(), model.getCdDestinatarioCnpj()));
+        }
+
         if (model.getIdLocalColeta() == null) {
             model.setIdLocalColeta(model.getIdRemetente());
         }
 
-        // 3. Identificação da Cidade da Coleta
         if (model.getIdEnderecoCidade() == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
              model.setIdEnderecoCidade(findCidadeIdByName(model.getDsCidadeColeta()));
         }
 
-        // 4. Estratégia de Busca do Agente
-        // Primeiro tenta pelo Nome ou E-mail vindo da DTM
         Integer agenteId = findAgenteIdByNomeOuEmail(model.getDsAgenteNome(), model.getDsAgenteEmail());
 
-        // Se falhar, tenta descobrir o agente baseado na CIDADE de coleta (fallback via cache)
         if (agenteId == null && model.getDsCidadeColeta() != null && !model.getDsCidadeColeta().isBlank()) {
             log.info("DTM {}: Agente não encontrado pelo nome ({}). Tentando busca pela cidade de coleta ({})",
                     model.getIdDtm(), model.getDsAgenteNome(), model.getDsCidadeColeta());
@@ -196,23 +126,15 @@ public class SqlServerRepository {
             Integer agenteIdDoMapa = findAgenteIdByCidadeColeta(model.getDsCidadeColeta());
 
             if (agenteIdDoMapa != null) {
-                log.info("DTM {}: Cidade de coleta ({}) mapeada DIRETAMENTE para o agente ID {}.",
-                        model.getIdDtm(), model.getDsCidadeColeta(), agenteIdDoMapa);
                 agenteId = agenteIdDoMapa;
-            } else {
-                log.warn("DTM {}: Nenhum agente encontrado no mapa (cache DB) para a cidade '{}'",
-                        model.getIdDtm(), model.getDsCidadeColeta());
-            }
+            } 
         }
         
         model.setIdAgente(agenteId); 
-        
-        // 5. Identificação de Tipos e Características da Carga
         model.setIdTipoColeta(findTipoColetaIdByName(model.getDsTipoColeta()));
         model.setIdEmbalagem(findEmbalagemIdComDePara(model.getDsEmbalagem())); 
         model.setIdNaturezaCarga(findNaturezaIdComDePara(model.getDsNaturezaCarga()));
 
-        // 6. Fallback: Se não achou Embalagem/Natureza, tenta pegar o padrão cadastrado no Remetente
         if (model.getIdRemetente() != null && (model.getIdEmbalagem() == null || model.getIdNaturezaCarga() == null)) {
             try {
                 String sql = "SELECT id_Embalagem, id_NaturezaMercadoria FROM tbdRemetente WHERE id_Remetente = ?";
@@ -221,299 +143,167 @@ public class SqlServerRepository {
                     if (model.getIdNaturezaCarga() == null) model.setIdNaturezaCarga(rs.getInt("id_NaturezaMercadoria"));
                     return model;
                 }, model.getIdRemetente());
-                log.info("DTM {}: Usados padrões de Embalagem/Natureza para o remetente ID {}.", model.getIdDtm(), model.getIdRemetente());
-            } catch (EmptyResultDataAccessException e) {
-                log.warn("DTM {}: Nenhuma configuração padrão de Embalagem/Natureza encontrada para o remetente ID {}.", model.getIdDtm(), model.getIdRemetente());
-            }
+            } catch (EmptyResultDataAccessException e) { }
         }
         
-        // 7. Preenche padrões finais (defaults) e ajusta horários
         fillDefaultsIfNull(model);
     }
 
-    /**
-     * Busca ID do Agente com lógica de tentativas:
-     * 1. Sigla + Nome (Ex: "SAO - Fulano")
-     * 2. Nome Completo Exato
-     * 3. E-mail
-     */
-    private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
-        if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) {
-            log.debug("Nenhum nome ou email fornecido para buscar o Agente.");
-            return null;
+    private Integer findPessoaIdRestritoCidade(String nome, String cnpj, String cidadeInput) {
+        if (cidadeInput == null || cidadeInput.isBlank()) {
+            log.warn("Cidade destino vazia. Usando busca padrão de pessoa.");
+            return findPessoaId(nome, cnpj);
         }
 
-        String siglaBusca = null;
-        String nomeCompleto = nome;
-        String nomeApenas = nome;     
-
-        // Tenta separar "SAO - Nome"
-        if (nome != null && nome.contains(" - ")) {
-            try {
-                String[] parts = nome.split(" - ", 2);
-                siglaBusca = parts[0].trim();
-                nomeApenas = parts[1].trim();
-                log.debug("Input do Agente '{}' foi dividido em Sigla/Cidade/UF '{}' e Nome '{}'", nomeCompleto, siglaBusca, nomeApenas);
-            } catch (Exception e) {
-                log.warn("Falha ao tentar dividir o nome do agente '{}'. Usando o nome completo para todas as buscas.", nomeCompleto);
-                siglaBusca = null;
-                nomeApenas = nomeCompleto; 
-            }
-        }
+        String cidadeLimpa = cidadeInput.split("/")[0].trim();
         
-        List<Object> params = new ArrayList<>();
-
-        // Tentativa 1: Sigla da Cidade + Nome
-        if (siglaBusca != null && !siglaBusca.isBlank() && nomeCompleto != null && !nomeCompleto.isBlank()) {
-            String sql1 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p " + 
-                          "LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade " +
-                          "WHERE (LOWER(c.cd_Sigla) = ? AND RTRIM(LOWER(p.ds_Pessoa)) = ?)";
-                          
-            params.add(siglaBusca.toLowerCase());
-            params.add(nomeCompleto.toLowerCase());
-            
+        if (cnpj != null && !cnpj.isBlank()) {
+            String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
+            String sql = """
+                SELECT TOP 1 p.id_Pessoa 
+                FROM tbdPessoa p
+                JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade
+                WHERE p.cd_CGCCPF = ? 
+                AND LOWER(c.ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?
+            """;
             try {
-                Integer id = jdbc.queryForObject(sql1, Integer.class, params.toArray());
-                log.info("ID do Agente (Pessoa) encontrado com busca [Combinada Sigla+Nome Exato]: {} (busca por nome='{}', sigla='{}')", id, nomeCompleto, siglaBusca);
+                Integer id = jdbc.queryForObject(sql, Integer.class, cleanCnpj, cidadeLimpa.toLowerCase());
+                log.info("Destinatário encontrado por CNPJ '{}' na cidade '{}': ID {}", cnpj, cidadeLimpa, id);
                 return id;
             } catch (EmptyResultDataAccessException e) {
-                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Combinada Sigla+Nome Exato]. Tentando próxima.");
-            } catch (Exception e) {
-                log.error("Erro ao executar busca [Combinada Sigla+Nome Exato] de Agente: {}", e.getMessage(), e);
+                log.debug("CNPJ match falhou na cidade '{}'. Tentando por nome...", cidadeLimpa);
             }
         }
 
-        // Tentativa 2: Nome Completo
-        if (nomeCompleto != null && !nomeCompleto.isBlank()) {
-             params.clear();
-             String sql2 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (RTRIM(LOWER(p.ds_Pessoa)) = ?)";
-             params.add(nomeCompleto.toLowerCase());
-             
-             try {
-                Integer id = jdbc.queryForObject(sql2, Integer.class, params.toArray());
-                log.info("ID do Agente (Pessoa) encontrado com busca [Nome Completo Exato]: {} (busca por nome='{}')", id, nomeCompleto);
+        if (nome != null && !nome.isBlank()) {
+            String nomeBusca = nome;
+            if (cachePessoaAlias.containsKey(nome.toUpperCase())) {
+                nomeBusca = cachePessoaAlias.get(nome.toUpperCase());
+            }
+
+            String sql = """
+                SELECT TOP 1 p.id_Pessoa 
+                FROM tbdPessoa p
+                JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade
+                WHERE (LOWER(p.ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(p.ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)
+                AND LOWER(c.ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?
+            """;
+            try {
+                String likeNome = "%" + nomeBusca.toLowerCase() + "%";
+                String likeCidade = cidadeLimpa.toLowerCase() + "%"; // Like na cidade para pegar variações pequenas
+                
+                Integer id = jdbc.queryForObject(sql, Integer.class, likeNome, likeNome, likeCidade);
+                log.info("Destinatário encontrado por Nome '{}' na cidade '{}': ID {}", nome, cidadeLimpa, id);
                 return id;
             } catch (EmptyResultDataAccessException e) {
-                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Nome Completo Exato]. Tentando próxima.");
-            } catch (Exception e) {
-                log.error("Erro ao executar busca [Nome Completo Exato] de Agente: {}", e.getMessage(), e);
+                log.warn("Destinatário '{}' não encontrado especificamente na cidade '{}'.", nome, cidadeLimpa);
             }
         }
-        
-        // Tentativa 3: E-mail
-        if (email != null && !email.isBlank()) {
-             params.clear();
-             String sql3 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (LOWER(p.cd_Email) = ?)";
-             params.add(email.toLowerCase());
-             
-             try {
-                Integer id = jdbc.queryForObject(sql3, Integer.class, params.toArray());
-                log.info("ID do Agente (Pessoa) encontrado com busca [Email]: {} (busca por email='{}')", id, email);
-                return id;
-             } catch (EmptyResultDataAccessException e) {
-                log.debug("Nenhum Agente (Pessoa) encontrado com busca [Email]. Tentando próxima.");
-             } catch (Exception e) {
-                log.error("Erro ao executar busca [Email] de Agente: {}", e.getMessage(), e);
-             }
-        }
 
-        log.warn("Nenhum Agente (Pessoa) encontrado com busca específica para nome='{}', email='{}', sigla='{}'", nomeCompleto, email, siglaBusca);
         return null;
     }
 
-    /**
-     * Busca genérica de Pessoa (Cliente/Fornecedor).
-     * Prioridade:
-     * 1. CNPJ (Busca exata, mais segura).
-     * 2. Nome/Razão Social (Busca aproximada com LIKE, usa cache de apelidos).
-     */
-    private Integer findPessoaId(String nome, String cnpj) {
-        if ((nome == null || nome.isBlank()) && (cnpj == null || cnpj.isBlank())) {
-            return null;
+    private Integer findAgenteIdByNomeOuEmail(String nome, String email) {
+        if ((nome == null || nome.isBlank()) && (email == null || email.isBlank())) return null;
+        String siglaBusca = null; String nomeCompleto = nome;
+        if (nome != null && nome.contains(" - ")) {
+            try { String[] parts = nome.split(" - ", 2); siglaBusca = parts[0].trim(); nomeCompleto = parts[1].trim(); } catch (Exception e) {}
         }
+        List<Object> params = new ArrayList<>();
+        if (siglaBusca != null && !siglaBusca.isBlank()) {
+            String sql1 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p LEFT JOIN tbdCidade c ON p.id_Cidade = c.id_Cidade WHERE (LOWER(c.cd_Sigla) = ? AND RTRIM(LOWER(p.ds_Pessoa)) = ?)";
+            try { return jdbc.queryForObject(sql1, Integer.class, siglaBusca.toLowerCase(), nomeCompleto.toLowerCase()); } catch (Exception e) {}
+        }
+        if (nomeCompleto != null && !nomeCompleto.isBlank()) {
+            String sql2 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (RTRIM(LOWER(p.ds_Pessoa)) = ?)";
+            try { return jdbc.queryForObject(sql2, Integer.class, nomeCompleto.toLowerCase()); } catch (Exception e) {}
+        }
+        if (email != null && !email.isBlank()) {
+            String sql3 = "SELECT TOP 1 p.id_Pessoa FROM tbdPessoa p WHERE (LOWER(p.cd_Email) = ?)";
+            try { return jdbc.queryForObject(sql3, Integer.class, email.toLowerCase()); } catch (Exception e) {}
+        }
+        return null;
+    }
 
-        // -----------------------------------------------------------------------
-        // 1. PRIORIDADE ALTA: Busca pelo CNPJ (Mais exato e performático)
-        // -----------------------------------------------------------------------
+    private Integer findPessoaId(String nome, String cnpj) {
+        if ((nome == null || nome.isBlank()) && (cnpj == null || cnpj.isBlank())) return null;
         if (cnpj != null && !cnpj.isBlank()) {
             try {
-                // Remove caracteres não numéricos (pontuação)
                 String cleanCnpj = NON_DIGIT_PATTERN.matcher(cnpj).replaceAll("");
-                
-                // Query exata pelo campo cd_CGCCPF
                 String sqlCnpj = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE cd_CGCCPF = ?";
-                
-                Integer id = jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
-                log.info("ID de Pessoa encontrado via CNPJ: {} (para cnpj='{}')", id, cnpj);
-                return id;
-            } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o CNPJ '{}'. Tentando busca pelo Nome/Apelido...", cnpj);
-            } catch (Exception e) {
-                log.error("Erro ao buscar Pessoa pelo CNPJ '{}': {}", cnpj, e.getMessage());
-            }
+                return jdbc.queryForObject(sqlCnpj, Integer.class, cleanCnpj);
+            } catch (Exception e) { }
         }
-
-        // -----------------------------------------------------------------------
-        // 2. PRIORIDADE BAIXA: Busca pelo Nome (Fallback)
-        // -----------------------------------------------------------------------
         if (nome != null && !nome.isBlank()) {
             String nomeBusca = nome;
-            String nomeUpper = nome.toUpperCase();
-
-            // Verifica se há apelido no cache antes de buscar
-            if (cachePessoaAlias.containsKey(nomeUpper)) {
-                nomeBusca = cachePessoaAlias.get(nomeUpper);
-                log.info("Apelido de Pessoa (do cache DB) '{}' traduzido para busca como '{}'", nome, nomeBusca);
-            }
-
-            // Busca por Nome (ds_Pessoa) ou Razão Social (ds_RazaoSocial) usando LIKE
+            if (cachePessoaAlias.containsKey(nome.toUpperCase())) nomeBusca = cachePessoaAlias.get(nome.toUpperCase());
             String sqlNome = "SELECT TOP 1 id_Pessoa FROM tbdPessoa WHERE (LOWER(ds_Pessoa) COLLATE Latin1_General_CI_AI LIKE ? OR LOWER(ds_RazaoSocial) COLLATE Latin1_General_CI_AI LIKE ?)";
-            List<Object> params = new ArrayList<>();
-            params.add("%" + nomeBusca.toLowerCase() + "%");
-            params.add("%" + nomeBusca.toLowerCase() + "%");
-
             try {
-                Integer id = jdbc.queryForObject(sqlNome, Integer.class, params.toArray());
-                log.info("ID de Pessoa encontrado via Nome/Apelido: {} (para nome='{}')", id, nome);
-                return id;
-            } catch (EmptyResultDataAccessException e) {
-                log.warn("Nenhuma Pessoa encontrada para o Nome/Apelido '{}' (e busca por CNPJ falhou ou não foi possível).", nome);
-            }
+                return jdbc.queryForObject(sqlNome, Integer.class, "%" + nomeBusca.toLowerCase() + "%", "%" + nomeBusca.toLowerCase() + "%");
+            } catch (Exception e) { }
         }
-
-        log.error("Não foi possível encontrar um ID de Pessoa para nome='{}' ou cnpj='{}'", nome, cnpj);
         return null;
     }
 
     private Integer findEmbalagemIdComDePara(String nomeOrigem) {
         if (nomeOrigem == null || nomeOrigem.isBlank()) return null;
-
-        String nomeOrigemUpper = nomeOrigem.toUpperCase();
-        
-        // 1. Tenta achar no cache de mapeamento (Keyword)
+        String nomeUpper = nomeOrigem.toUpperCase();
         for (EmbalagemMapping mapping : this.cacheMapeamentoEmbalagem) {
-            if (nomeOrigemUpper.contains(mapping.keywordUpper())) {
-                log.info("Mapeamento de embalagem (do cache DB) encontrado: '{}' -> ID {}", nomeOrigem, mapping.targetId());
-                return mapping.targetId();
-            }
+            if (nomeUpper.contains(mapping.keywordUpper())) return mapping.targetId();
         }
-
-        // 2. Se não achar, vai no banco com LIKE
-        log.warn("Não foi encontrado mapeamento de keyword (do cache DB) para a embalagem '{}'. Tentando busca direta por LIKE.", nomeOrigem);
         try {
             String sql = "SELECT TOP 1 id_Embalagem FROM tbdEmbalagem WHERE LOWER(ds_Embalagem) COLLATE Latin1_General_CI_AI LIKE ?";
             return jdbc.queryForObject(sql, Integer.class, "%" + nomeOrigem.toLowerCase() + "%");
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID para a Embalagem contendo '{}' (nem no cache, nem por LIKE).", nomeOrigem);
-            return null;
-        } catch (Exception e) {
-            log.error("Erro ao buscar ID de Embalagem para '{}': {}", nomeOrigem, e.getMessage(), e);
-            return null;
-        }
+        } catch (Exception e) { return null; }
     }
-
     
     private Integer findNaturezaIdComDePara(String nomeOrigem) {
         if (nomeOrigem == null || nomeOrigem.isBlank()) return null;
-
-        String nomeOrigemUpper = nomeOrigem.toUpperCase();
-
-        // 1. Tenta achar no cache de mapeamento (Keyword)
+        String nomeUpper = nomeOrigem.toUpperCase();
         for (NaturezaMapping mapping : this.cacheMapeamentoNatureza) {
-            if (nomeOrigemUpper.contains(mapping.keywordUpper())) {
-                log.info("Mapeamento de natureza (do cache DB) encontrado: '{}' -> ID {}", nomeOrigem, mapping.targetId());
-                return mapping.targetId();
-            }
+            if (nomeUpper.contains(mapping.keywordUpper())) return mapping.targetId();
         }
-
-        // 2. Se não achar, vai no banco com LIKE
-        log.warn("Não foi encontrado mapeamento de keyword (do cache DB) para a natureza '{}'. Tentando busca direta por LIKE.", nomeOrigem);
         try {
             String sql = "SELECT TOP 1 id_NaturezaMercadoria FROM tbdNaturezaMercadoria WHERE LOWER(ds_NaturezaMercadoria) COLLATE Latin1_General_CI_AI LIKE ?";
             return jdbc.queryForObject(sql, Integer.class, "%" + nomeOrigem.toLowerCase() + "%");
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID para a Natureza da Carga contendo '{}' (nem no cache, nem por LIKE).", nomeOrigem);
-            return null;
-        }
+        } catch (Exception e) { return null; }
     }
-
 
     private Integer findTipoColetaIdByName(String nome) {
         if (nome == null || nome.isBlank()) return null;
-
         String termoBusca = nome.toUpperCase();
-        // Ajuste gramatical simples (remove 'O' ou 'A' final) para melhorar o LIKE
-        if (termoBusca.endsWith("O") || termoBusca.endsWith("A")) {
-            termoBusca = termoBusca.substring(0, termoBusca.length() - 1);
-        }
-
+        if (termoBusca.endsWith("O") || termoBusca.endsWith("A")) termoBusca = termoBusca.substring(0, termoBusca.length() - 1);
         try {
             String sql = "SELECT TOP 1 id_TipoPedidoColeta FROM tbdTipoPedidoColeta WHERE LOWER(ds_TipoPedidoColeta) COLLATE Latin1_General_CI_AI LIKE ?";
             return jdbc.queryForObject(sql, Integer.class, termoBusca.toLowerCase() + "%");
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Não foi possível encontrar um ID para o Tipo de Coleta contendo '{}'.", nome);
-            return null;
-        }
+        } catch (Exception e) { return null; }
     }
 
     private Integer findCidadeIdByName(String cityName) {
-        if (cityName == null || cityName.isBlank()) {
-            return null;
-        }
-        
-        // Limpeza: remove barra de estado (Ex: "Guarulhos/SP" -> "Guarulhos")
+        if (cityName == null || cityName.isBlank()) return null;
         String trimmedCityName = cityName.trim();
-        if (trimmedCityName.contains("/")) {
-            trimmedCityName = trimmedCityName.split("/")[0].trim();
-        }
-
-        if (trimmedCityName.isEmpty()) {
-            return null;
-        }
-
+        if (trimmedCityName.contains("/")) trimmedCityName = trimmedCityName.split("/")[0].trim();
         String sql = "SELECT TOP 1 id_Cidade FROM tbdCidade WHERE LOWER(ds_Cidade) COLLATE Latin1_General_CI_AI LIKE ?";
         try {
-            Integer id = jdbc.queryForObject(sql, Integer.class, trimmedCityName.toLowerCase() + "%");
-            log.info("ID de Cidade encontrado via Nome: {} (para nome='{}')", id, cityName);
-            return id;
-        } catch (EmptyResultDataAccessException e) {
-            log.warn("Nenhuma Cidade encontrada para o nome '{}' na tbdCidade.", cityName);
-            return null;
-        } catch (Exception e) {
-            log.error("Erro ao buscar ID de Cidade pelo nome '{}' na tbdCidade: {}", cityName, e.getMessage(), e);
-            return null;
-        }
+            return jdbc.queryForObject(sql, Integer.class, trimmedCityName.toLowerCase() + "%");
+        } catch (Exception e) { return null; }
     }
 
-    /**
-     * Preenche IDs obrigatórios com defaults (do application.properties) caso ainda estejam nulos,
-     * e aplica regras de horários para Coletas Emergenciais.
-     */
     private void fillDefaultsIfNull(SalvaColetaModel model) {
         if (model.getIdRemetente() == null) model.setIdRemetente(appProperties.getDefaults().getIdRemetente());
         if (model.getIdDestinatario() == null) model.setIdDestinatario(appProperties.getDefaults().getIdDestinatario());
         if (model.getIdTomador() == null) model.setIdTomador(appProperties.getDefaults().getIdTomador());
         if (model.getIdFilialResposavel() == null) model.setIdFilialResposavel(appProperties.getDefaults().getIdFilialResposavel());
         if (model.getIdLocalColeta() == null) model.setIdLocalColeta(appProperties.getDefaults().getIdLocalColeta());
-        
         if (model.getIdTipoColeta() == null) model.setIdTipoColeta(appProperties.getDefaults().getIdTipoColetaDefault());
         
-        // Fallback final de agente se a busca por cidade falhou
         if (model.getIdAgente() == null) {
-            log.warn("DTM {}: Agente não encontrado por nome nem por cidade de coleta. Aplicando agente padrão (ID: {}).", model.getIdDtm(), appProperties.getDefaults().getIdAgente());
             model.setIdAgente(appProperties.getDefaults().getIdAgente());
         }
 
-        if (model.getIdNaturezaCarga() == null) {
-             log.warn("DTM {}: ID da Natureza da Carga não foi encontrado. Aplicando natureza genérica de fallback (ID: 1345).", model.getIdDtm());
-             model.setIdNaturezaCarga(1345); 
-        }
-        if (model.getIdEmbalagem() == null) {
-            log.error("DTM {}: ID da Embalagem é obrigatório e não foi encontrado. Aplicando embalagem de fallback (ID: 33).", model.getIdDtm());
-            model.setIdEmbalagem(33);
-        }
+        if (model.getIdNaturezaCarga() == null) model.setIdNaturezaCarga(1345); 
+        if (model.getIdEmbalagem() == null) model.setIdEmbalagem(33);
 
-        // --- REGRA DE HORÁRIOS DE COLETA ---
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         String tipoColeta = model.getDsTipoColeta();
         LocalDate dtColeta = model.getDtColeta();
@@ -521,111 +311,49 @@ public class SqlServerRepository {
         
         boolean isEmergencia = tipoColeta != null && tipoColeta.toUpperCase().contains("EMERGÊNCIA");
         
-        // CASO 1: Emergência para HOJE
-        // Regra: Início = Agora, Fim = Agora + 6 horas
         if (isEmergencia && dtColeta != null && dtColeta.isEqual(hoje)) {
             LocalTime agora = LocalTime.now(SAO_PAULO_ZONE_ID);
-            String hrInicioAgora = agora.format(formatter);
-            String hrFimAgoraMais6 = agora.plusHours(6).format(formatter);
-            
-            model.setHrColetaInicio(hrInicioAgora);
-            model.setHrColetaFim(hrFimAgoraMais6);
-            
-            log.info("DTM {}: REGRA EMERGÊNCIA (MESMO DIA) aplicada. Início: {}, Fim: {}", 
-                      model.getIdDtm(), hrInicioAgora, hrFimAgoraMais6);
-                      
+            model.setHrColetaInicio(agora.format(formatter));
+            model.setHrColetaFim(agora.plusHours(6).format(formatter));
         } else {
-            // CASO 2: Coleta Normal ou Emergência Futura (mantém horários se já vieram, senão aplica defaults)
-            
-            if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) {
-                model.setHrColetaInicio("08:00");
-                log.warn("DTM {}: HrColetaInicio veio NULA da View. Aplicando padrão: 08:00", model.getIdDtm());
-            }
-            
+            if (model.getHrColetaInicio() == null || model.getHrColetaInicio().isBlank()) model.setHrColetaInicio("08:00");
             if (model.getHrColetaFim() == null || model.getHrColetaFim().isBlank()) {
-                 if (isEmergencia) {
-                    model.setHrColetaFim("14:00");
-                    log.warn("DTM {}: HrColetaFim (Emergência Futura) veio NULA da View. Aplicando padrão: 14:00", model.getIdDtm());
-                 } else {
-                    model.setHrColetaFim("16:00");
-                    log.warn("DTM {}: HrColetaFim (Normal) veio NULA da View. Aplicando padrão: 16:00", model.getIdDtm());
-                 }
-            }
-    
-            if (isEmergencia) {
-                log.info("DTM {}: REGRA EMERGÊNCIA (DATA FUTURA) aplicada. Data: {}. Horário: {}-{}", 
-                         model.getIdDtm(), dtColeta, model.getHrColetaInicio(), model.getHrColetaFim());
-            } else {
-                log.debug("DTM {}: Horário NORMAL (vinda View) aplicado. Data: {}. Horário: {}-{}",
-                         model.getIdDtm(), dtColeta, model.getHrColetaInicio(), model.getHrColetaFim());
+                 if (isEmergencia) model.setHrColetaFim("14:00");
+                 else model.setHrColetaFim("16:00");
             }
         }
         
-        // Validação final de Modal (Rodoviário/Aéreo)
         if (model.getTpModal() == null) {
             AppProperties.Defaults.Modal defaultModalEnum = appProperties.getDefaults().getModal();
             if (defaultModalEnum != null) {
-                 try {
-                     model.setTpModal(Modal.valueOf(defaultModalEnum.name()));
-                     log.debug("DTM {}: TpModal definido para o padrão: {}", model.getIdDtm(), model.getTpModal());
-                 } catch (IllegalArgumentException e) {
-                      log.error("DTM {}: Enum Modal '{}' definido em AppProperties não corresponde ao enum Modal do domínio. Usando AÉREO como fallback.", model.getIdDtm(), defaultModalEnum.name());
-                      model.setTpModal(Modal.AEREO);
-                 }
-            } else {
-                 log.warn("DTM {}: Modal padrão não definido em AppProperties. Usando AÉREO como fallback.", model.getIdDtm());
-                 model.setTpModal(Modal.AEREO);
-            }
+                 try { model.setTpModal(Modal.valueOf(defaultModalEnum.name())); } 
+                 catch (IllegalArgumentException e) { model.setTpModal(Modal.AEREO); }
+            } else { model.setTpModal(Modal.AEREO); }
         }
     }
     
-    /**
-     * Tenta encontrar o ID de um Agente mapeado para uma cidade específica.
-     * Útil quando o nome do agente não veio na DTM.
-     */
     private Integer findAgenteIdByCidadeColeta(String cidadeColeta) {
         String cidadeNormalizada = normalizarString(cidadeColeta);
-        if (cidadeNormalizada == null) {
-            return null;
-        }
-        
-        // 1. Busca Exata
+        if (cidadeNormalizada == null) return null;
         for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
-            if (mapping.chaveCidadeUpper().equals(cidadeNormalizada)) {
-                log.debug("Mapeamento de agente por cidade (cache DB, chave exata) encontrado: '{}' -> ID {}", cidadeNormalizada, mapping.targetAgenteId());
-                return mapping.targetAgenteId();
-            }
+            if (mapping.chaveCidadeUpper().equals(cidadeNormalizada)) return mapping.targetAgenteId();
         }
-
-        // 2. Busca por prefixo (para casos como "Sao Paulo" mapeando "Sao Paulo/SP")
         if (!cidadeNormalizada.contains("/")) {
             String cidadeComBarra = cidadeNormalizada + "/";
             for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
-                if (mapping.chaveCidadeUpper().startsWith(cidadeComBarra)) {
-                    log.info("Mapeamento de agente por cidade (cache DB, parcial) encontrado: Cidade '{}' corresponde à chave '{}' do mapa.", cidadeNormalizada, mapping.chaveCidadeUpper());
-                    return mapping.targetAgenteId(); 
-                }
+                if (mapping.chaveCidadeUpper().startsWith(cidadeComBarra)) return mapping.targetAgenteId(); 
             }
         }
-        
-        // 3. Busca ampla (Contains) - menos precisa
         for (CidadeAgenteMapping mapping : this.cacheMapeamentoCidadeAgente) {
-             if (mapping.chaveCidadeUpper().contains(cidadeNormalizada)) {
-                log.warn("Mapeamento de agente por cidade (cache DB, 'contains', menos preciso) encontrado: Cidade '{}' corresponde à chave '{}' do mapa.", cidadeNormalizada, mapping.chaveCidadeUpper());
-                return mapping.targetAgenteId();
-             }
+             if (mapping.chaveCidadeUpper().contains(cidadeNormalizada)) return mapping.targetAgenteId();
         }
-
         return null;
     }
 
     private String normalizarString(String input) {
-        if (input == null || input.isBlank()) {
-            return null;
-        }
+        if (input == null || input.isBlank()) return null;
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
         normalized = normalized.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
-        
         return normalized.toUpperCase().trim();
     }
 }

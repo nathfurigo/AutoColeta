@@ -19,20 +19,13 @@ import java.util.List;
 
 import com.tecnolog.autocoleta.service.FeriadoCacheService;
 
-/**
- * Componente responsável por converter (mapear) os dados brutos da tabela de DTM (DtmPendingRow)
- * para o modelo de negócio utilizado no salvamento da coleta (SalvaColetaModel).
- * Realiza tratamentos de JSON, conversão de unidades e validação de datas (dias úteis).
- */
 @Component
 public class DtmToSalvaColetaMapper {
 
     private static final Logger log = LoggerFactory.getLogger(DtmToSalvaColetaMapper.class);
     
-    // Responsável pela serialização/deserialização do JSON
     private final ObjectMapper om;
     
-    // Serviço para verificar feriados e fins de semana
     private final FeriadoCacheService feriadoService;
 
     public DtmToSalvaColetaMapper(ObjectMapper om, FeriadoCacheService feriadoService) {
@@ -40,10 +33,6 @@ public class DtmToSalvaColetaMapper {
         this.feriadoService = feriadoService; 
     }
     
-    /**
-     * Método utilitário para converter medidas de Metros para Centímetros.
-     * Utiliza BigDecimal para garantir precisão e arredondamento correto (2 casas).
-     */
     private Double metrosParaCentimetros(Double metros) {
         if (metros == null) {
             return null;
@@ -54,13 +43,7 @@ public class DtmToSalvaColetaMapper {
                          .doubleValue();
     }
 
-    /**
-     * Método principal de mapeamento.
-     * @param row Objeto contendo o ID e o JSON bruto da DTM.
-     * @return Modelo tratado pronto para ser processado pela API de salvar coleta.
-     */
     public SalvaColetaModel map(DtmPendingRow row) {
-        // 1. Validação inicial de integridade
         if (row == null || row.getJsonPedidoColeta() == null || row.getJsonPedidoColeta().isBlank()) {
              log.error("Tentativa de mapear DtmPendingRow nula ou com JSON vazio.");
              throw new IllegalArgumentException("DtmPendingRow inválido para mapeamento.");
@@ -69,20 +52,16 @@ public class DtmToSalvaColetaMapper {
         long idDtm = row.getIdDtm();
 
         try {
-            // 2. Deserialização: Converte a String JSON para o Objeto Java
             SalvaColetaModel model = om.readValue(row.getJsonPedidoColeta(), SalvaColetaModel.class);
             
-            // Garante que o ID da DTM esteja vinculado ao modelo
             model.setIdDtm(idDtm);
 
-            // 3. Tratamento de Dimensões (Conversão M -> CM)
             if (model.getDimensoes() != null && !model.getDimensoes().isEmpty()) {
                 for (SalvaColetaDimensoesModel dim : model.getDimensoes()) {
                     Double compM = dim.getComp();
                     Double largM = dim.getLarg();
                     Double altM = dim.getAlt();
 
-                    // Atualiza o objeto com os valores convertidos
                     dim.setComp(metrosParaCentimetros(compM));
                     dim.setLarg(metrosParaCentimetros(largM));
                     dim.setAlt(metrosParaCentimetros(altM));
@@ -91,9 +70,6 @@ public class DtmToSalvaColetaMapper {
                  log.warn("DTM {}: Nenhuma dimensão encontrada no JSON.", idDtm);
             }
 
-            // 4. Tratamento de Nota Fiscal (NF)
-            // Regra: Se não tem NF detalhada, mas tem Valor Total > 0, cria uma NF genérica "0"
-            // isso evita erros de validação em coletas que exigem ao menos uma NF.
             if ((model.getNf() == null || model.getNf().isEmpty()) && 
                  model.getVlTotalNF() != null && 
                  model.getVlTotalNF().compareTo(BigDecimal.ZERO) > 0) {
@@ -106,7 +82,6 @@ public class DtmToSalvaColetaMapper {
                 model.setNf(nfs);
             }
 
-            // 5. Lógica de Datas e Agendamento
             LocalDate dtColetaOriginal = model.getDtColeta(); 
             
             if (dtColetaOriginal == null) {
@@ -114,8 +89,7 @@ public class DtmToSalvaColetaMapper {
             } else {
 
                 if (model.isAgendamentoFixo()) {
-                    // --- REGRA DE AGENDAMENTO FIXO ---
-                    // Tenta manter a data original. Só altera se cair em Feriado/Fim de Semana.
+
                     try {
                         LocalDate dtValidada = feriadoService.getProximoDiaUtil(dtColetaOriginal);
                         
@@ -131,10 +105,6 @@ public class DtmToSalvaColetaMapper {
                     }
 
                 } else {
-                    // --- REGRA DE AGENDAMENTO NORMAL ---
-                    // Garante que a data não seja no passado.
-                    // Se a data original for anterior a hoje, assume 'Hoje' como base.
-                    // Em seguida, busca o próximo dia útil.
                     try {
                         LocalDate hoje = LocalDate.now();
                         LocalDate dtBase = dtColetaOriginal.isBefore(hoje) ? hoje : dtColetaOriginal;
@@ -151,8 +121,6 @@ public class DtmToSalvaColetaMapper {
                 }
             }
             
-            // 6. Limpeza de Dados do Agente
-            // Remove informações do usuário logado para evitar inconsistências ou sobrescrita indevida
             model.setDsAgenteNome(null);
             model.setDsAgenteEmail(null);
 

@@ -1,13 +1,13 @@
 package com.tecnolog.autocoleta.dto.salvarcoleta;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tecnolog.autocoleta.domain.Modal;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SalvaColetaModel {
@@ -20,17 +20,20 @@ public class SalvaColetaModel {
     @JsonProperty("idTomador")        private Integer idTomador;
     @JsonProperty("idFilialResposavel") private Integer idFilialResposavel = 135; 
     @JsonProperty("idLocalColeta")    private Integer idLocalColeta;
+    
     @JsonProperty("dsRemetente")      private String dsRemetente;
     @JsonProperty("cdRemetenteCnpj")  private String cdRemetenteCnpj;
     @JsonProperty("dsDestinatario")   private String dsDestinatario;
     @JsonProperty("cdDestinatarioCnpj") private String cdDestinatarioCnpj;
     @JsonProperty("dsTomador")        private String dsTomador;
     @JsonProperty("cdTomadorCnpj")    private String cdTomadorCnpj;
+    
     @JsonProperty("dtColeta")   @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtColeta;
 
     @JsonProperty("hrColetaInicio")   private String hrColetaInicio;
     @JsonProperty("hrColetaFim")      private String hrColetaFim;
+    
     @JsonProperty("dtEntrega")  @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate dtEntrega;
 
@@ -40,7 +43,14 @@ public class SalvaColetaModel {
     @JsonProperty("dsEnderecoBairro")  private String dsEnderecoBairro;
     @JsonProperty("dsEnderecoComplento")private String dsEnderecoComplento;
     @JsonProperty("cdEnderecoCEP")    private String cdEnderecoCEP;
-    @JsonProperty("idEnderecoCidade")  private Integer idEnderecoCidade; 
+    
+    // --- CIDADES ---
+    @JsonProperty("idEnderecoCidade")  private Integer idEnderecoCidade; // Cidade de Origem (Coleta)
+    
+    // CORREÇÃO: Alterado de "idCidadeDestino" para "idCidadeEntrega"
+    // Isso força a API a usar este ID para o destino, sobrescrevendo o padrão do cadastro do cliente.
+    @JsonProperty("idCidadeEntrega")   private Integer idCidadeDestino;  
+
     @JsonProperty("dsSolicitante")    private String dsSolicitante;
     @JsonProperty("dsSolicitanteNome") private String dsSolicitanteNome;
     @JsonProperty("dsProcurarPor")    private String dsProcurarPor;
@@ -57,16 +67,22 @@ public class SalvaColetaModel {
     @JsonProperty("nrReferencia")     private String nrReferencia;
     @JsonProperty("nrPedidoCliente")  private String nrPedidoCliente;
     @JsonProperty("vlTotalNF")        private BigDecimal vlTotalNF;
+    
     @JsonProperty("dsCidadeColeta")   private String dsCidadeColeta;    
     @JsonProperty("dsCidadeColetaUF") private String dsCidadeColetaUF;  
+    
+    // Mantemos dsCidadeDestino pois é informativo
     @JsonProperty("dsCidadeDestino")  private String dsCidadeDestino;   
+    
     @JsonProperty("NF")               private List<SalvaColetaNFModel> nf;
     @JsonProperty("Dimensoes")        private List<SalvaColetaDimensoesModel> dimensoes;
     @JsonProperty("Monitoramento")    private List<SalvaColetaMonitoramentoModel> monitoramento;
     @JsonProperty("dsComentarios")    private String dsComentarios;
+    
     @JsonProperty("isAgendamentoFixo")
     private boolean isAgendamentoFixo;
 
+    // Getters and Setters padrão
     public Long getIdDtm() { return idDtm; }
     public void setIdDtm(Long idDtm) { this.idDtm = idDtm; }
     public String getTokenHash() { return tokenHash; }
@@ -117,6 +133,11 @@ public class SalvaColetaModel {
     public void setCdEnderecoCEP(String cdEnderecoCEP) { this.cdEnderecoCEP = cdEnderecoCEP; }
     public Integer getIdEnderecoCidade() { return idEnderecoCidade; }
     public void setIdEnderecoCidade(Integer idEnderecoCidade) { this.idEnderecoCidade = idEnderecoCidade; }
+    
+    // Getter/Setter continuam usando o nome lógico interno, mas o JSON sairá como "idCidadeEntrega"
+    public Integer getIdCidadeDestino() { return idCidadeDestino; }
+    public void setIdCidadeDestino(Integer idCidadeDestino) { this.idCidadeDestino = idCidadeDestino; }
+
     public String getDsSolicitante() { return dsSolicitante; }
     public void setDsSolicitante(String dsSolicitante) { this.dsSolicitante = dsSolicitante; }
     public String getDsSolicitanteNome() { return dsSolicitanteNome; }
@@ -164,10 +185,6 @@ public class SalvaColetaModel {
     public String getDsCidadeDestino() { return dsCidadeDestino; }
     public void setDsCidadeDestino(String dsCidadeDestino) { this.dsCidadeDestino = dsCidadeDestino; }
 
-    public boolean isAgendamentoFixo() {
-        return isAgendamentoFixo;
-    }
-    public void setAgendamentoFixo(boolean isAgendamentoFixo) {
-        this.isAgendamentoFixo = isAgendamentoFixo;
-    }
+    public boolean isAgendamentoFixo() { return isAgendamentoFixo; }
+    public void setAgendamentoFixo(boolean isAgendamentoFixo) { this.isAgendamentoFixo = isAgendamentoFixo; }
 }
